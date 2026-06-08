@@ -10,7 +10,7 @@ French version: [README.fr.md](README.fr.md)
 
 This fork has been smoke-tested with jQuery `4.0.0` in the minimal demo and covered by automated unit and visual tests. The core plugin can initialize, navigate, resize, add/remove pages, and destroy itself in modern browser test runs.
 
-Compatibility is not yet guaranteed for every modern browser or device. Safari/WebKit, iOS, Android touch behavior, accessibility, and production visual regressions still need dedicated validation.
+Automated visual coverage currently runs on Chromium desktop and a compact Chromium mobile viewport. A WebKit Playwright project is configured when the host has the required WebKit system dependencies; on the current local machine it is not enabled because `libgstcodecparsers-1.0.so.0` is missing. Native iOS/Android devices, accessibility, and production visual regressions still need dedicated validation.
 
 ## What Changed
 
@@ -38,6 +38,8 @@ Compatibility is not yet guaranteed for every modern browser or device. Safari/W
 - Fixed minimal demo layout so turn.js page measurements match the real rendered page size.
 - Added unit tests with Vitest and JSDOM.
 - Added Playwright visual tests and reference snapshots for the minimal demo.
+- Added Chromium mobile visual validation for the minimal demo and magazine demos.
+- Added conditional WebKit Playwright validation for hosts with the required WebKit system dependencies.
 - Added npm scripts and project configuration for automated tests.
 - Regenerated `turn.min.js` from the updated source.
 
@@ -185,6 +187,8 @@ The current suite covers:
 - minimal demo rendering;
 - page turn rendering;
 - compact viewport geometry;
+- mobile viewport controls and geometry in Chromium;
+- magazine and single-page magazine smoke tests in desktop and mobile Chromium;
 - page measurements during animation.
 
 ## Requirements
@@ -192,6 +196,8 @@ The current suite covers:
 - Node.js for development and tests.
 - jQuery `4.0.0` for the current maintained demo and test setup.
 - A browser supported by Playwright for visual tests.
+- Chromium visual tests use the local Chromium executable when `/usr/bin/chromium` is available.
+- WebKit visual tests require Playwright WebKit plus the system library `libgstcodecparsers-1.0.so.0`; set `TURNJS_ENABLE_WEBKIT=1` to force the WebKit project on a prepared host.
 
 Older jQuery versions were part of the compatibility spike, but this repository now uses jQuery `4.0.0` as the modern target for its demo and automated tests.
 
@@ -199,7 +205,7 @@ Older jQuery versions were part of the compatibility spike, but this repository 
 
 The original README listed Chrome 12, Safari 5, Firefox 10, and IE 9 for the historical 3rd release.
 
-This maintained copy targets modern browsers, but the current automated coverage is limited to the configured Playwright browsers and the local test environment. Treat Safari/WebKit, mobile touch devices, and accessibility behavior as open validation work.
+This maintained copy targets modern browsers. The current automated coverage validates Chromium desktop with reference screenshots and Chromium mobile/compact behavior with functional and geometry checks. WebKit validation is configured but conditional: it was attempted locally and Playwright could not launch WebKit because the host is missing `libgstcodecparsers-1.0.so.0`. Treat Safari/WebKit as validated only on hosts where that project runs, and treat native mobile touch devices and accessibility behavior as open validation work.
 
 ## License
 

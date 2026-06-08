@@ -64,13 +64,19 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('minimal demo renders the opening page', async ({ page }) => {
+const isScreenshotProject = testInfo => testInfo.project.name === '';
+
+test('minimal demo renders the opening page', async ({ page }, testInfo) => {
   await page.goto(`${baseUrl}/demos/minimal/index.html`);
   await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
-  await expect(page.locator('#book')).toHaveScreenshot('minimal-book-page-1.png');
+
+  await expect(page.locator('#status')).toHaveText('Page 1 / 6');
+  if (isScreenshotProject(testInfo)) {
+    await expect(page.locator('#book')).toHaveScreenshot('minimal-book-page-1.png');
+  }
 });
 
-test('minimal demo renders after turning to the next page', async ({ page }) => {
+test('minimal demo renders after turning to the next page', async ({ page }, testInfo) => {
   await page.goto(`${baseUrl}/demos/minimal/index.html`);
   await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
 
@@ -78,10 +84,12 @@ test('minimal demo renders after turning to the next page', async ({ page }) => 
   await expect(page.locator('#status')).toHaveText('Page 2 / 6');
   await page.waitForTimeout(700);
 
-  await expect(page.locator('#book')).toHaveScreenshot('minimal-book-page-2.png');
+  if (isScreenshotProject(testInfo)) {
+    await expect(page.locator('#book')).toHaveScreenshot('minimal-book-page-2.png');
+  }
 });
 
-test('minimal demo keeps turn geometry aligned in a compact viewport', async ({ page }) => {
+test('minimal demo keeps turn geometry aligned in a compact viewport', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 600, height: 720 });
   await page.goto(`${baseUrl}/demos/minimal/index.html`);
   await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
@@ -101,10 +109,12 @@ test('minimal demo keeps turn geometry aligned in a compact viewport', async ({ 
   expect(metrics.size).toEqual(metrics.book);
   expect(metrics.wrapper.height).toBe(metrics.book.height);
   expect(metrics.wrapper.width).toBe(metrics.book.width / 2);
-  await expect(page.locator('#book')).toHaveScreenshot('minimal-book-compact-page-1.png');
+  if (isScreenshotProject(testInfo)) {
+    await expect(page.locator('#book')).toHaveScreenshot('minimal-book-compact-page-1.png');
+  }
 });
 
-test('minimal demo keeps page measurements aligned during a page turn', async ({ page }) => {
+test('minimal demo keeps page measurements aligned during a page turn', async ({ page }, testInfo) => {
   await page.goto(`${baseUrl}/demos/minimal/index.html`);
   await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
 
@@ -163,7 +173,37 @@ test('minimal demo keeps page measurements aligned during a page turn', async ({
     }
   }
 
-  await expect(page.locator('#book')).toHaveScreenshot('minimal-book-turning-page-4.png');
+  if (isScreenshotProject(testInfo)) {
+    await expect(page.locator('#book')).toHaveScreenshot('minimal-book-turning-page-4.png');
+  }
+});
+
+test('minimal demo supports page controls in a mobile viewport', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile viewport scenario runs in the mobile project.');
+
+  await page.goto(`${baseUrl}/demos/minimal/index.html`);
+  await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
+
+  await expect(page.locator('#status')).toHaveText('Page 1 / 6');
+  await page.locator('#next').click();
+  await expect(page.locator('#status')).toHaveText('Page 2 / 6');
+  await page.waitForTimeout(700);
+  await page.locator('#previous').click();
+  await expect(page.locator('#status')).toHaveText('Page 1 / 6');
+
+  const metrics = await page.evaluate(() => {
+    const book = document.querySelector('#book').getBoundingClientRect();
+    const wrapper = document.querySelector('.turn-page-wrapper').getBoundingClientRect();
+
+    return {
+      book: { width: Math.round(book.width), height: Math.round(book.height) },
+      wrapper: { width: Math.round(wrapper.width), height: Math.round(wrapper.height) }
+    };
+  });
+
+  expect(metrics.book.width).toBeLessThanOrEqual(390);
+  expect(metrics.wrapper.height).toBe(metrics.book.height);
+  expect(metrics.wrapper.width).toBe(metrics.book.width / 2);
 });
 
 test('magazine demo loads with jQuery 4 and turns pages', async ({ page }) => {
