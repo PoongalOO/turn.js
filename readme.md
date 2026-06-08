@@ -1,123 +1,196 @@
+# turn.js 3rd release, local maintenance fork
 
-![Bilby Stampede](http://turnjs.com/pics/small-turnjs-letters.png)
+turn.js is a jQuery plugin that renders HTML pages as a book or magazine with a page-turn transition.
 
-**Get the turn.js 4th release on [turnjs.com](http://www.turnjs.com/)**
+This repository contains a maintained local copy of the original `turn.js` 3rd release. The current work focuses on making the library easier to test and safer to use with modern jQuery versions while keeping the original API shape.
 
+French version: [README.fr.md](README.fr.md)
 
-### What's new in turn.js 4th release?
+## Current Status
 
-- Added option `autoCenter`
+This fork has been smoke-tested with jQuery `4.0.0` in the minimal demo and covered by automated unit and visual tests. The core plugin can initialize, navigate, resize, add/remove pages, and destroy itself in modern browser test runs.
 
-- Added option `zoom`
+Compatibility is not yet guaranteed for every modern browser or device. Safari/WebKit, iOS, Android touch behavior, accessibility, and production visual regressions still need dedicated validation.
 
-- Added property `animating`
+## What Changed
 
-- Added property `zoom`
+- Updated internal event registration from deprecated jQuery `.bind()` / `.unbind()` patterns to `.on()` / `.off()`.
+- Added event namespaces:
+  - `.turn` for book-level and document-level turn.js events.
+  - `.turnFlip` for internal flip-page events.
+- Added a public `destroy` method:
+  - stops animations;
+  - detaches turn.js event handlers;
+  - removes turn and flip wrappers;
+  - restores original page elements as direct children;
+  - restores original `style` and `class` attributes;
+  - removes turn.js internal jQuery data while preserving unrelated user data.
+- Fixed `animatef(false)` so cancelling an animation clears the active interval.
+- Added a minimal browser demo using jQuery `4.0.0`.
+- Added text and local images to the minimal demo.
+- Fixed minimal demo layout so turn.js page measurements match the real rendered page size.
+- Added unit tests with Vitest and JSDOM.
+- Added Playwright visual tests and reference snapshots for the minimal demo.
+- Added npm scripts and project configuration for automated tests.
+- Regenerated `turn.min.js` from the updated source.
 
-- Added method `center`
+## Demo
 
-- Added method `destroy`
+Open the minimal demo directly in a browser:
 
-- Added method `is`
-
-- Added method `zoom`
-
-- Added event `missing`
-
-- Added event `zooming`
-
-- Added class `.even`
-
-- Added class `.fixed`
-
-- Added class `.hard`
-
-- Added class `.odd`
-
-- Added class `.own-size`
-
-- Added class `.sheet`
-
-- Added the ignore attribute
-
-- New turn.html4.js
-
-- New scissors.js
-
-- Changed the class `.turn-page` to `.page`
-
-- Improved the animation frame generator with requestAnimationFrame
-
-- Improved the animation speed for hard pages with CSS3 transitions
-
-- Redesigned the event sequence to listen to only three events
-
-- Fixed issue #79
-
-- Fixed issue #91
-
-- Fixed issue about the event order turning + turned
-
-- Fixed issue about appending pages in wrong locations
-
-Available only on [turnjs.com](http://www.turnjs.com/)
-
-* * *
-
-turn.js 3rd release
-=========
-
-### Make a flip book with HTML5
-
-Turn.js is a plugin for jQuery that adds a beautiful transition similar to real pages in a book or magazine. It works in all modern browsers including touch devices.
-
-### What's new?
-
-- New `addPage` for creating pages dynamically.
-
-- New `display` for single and double pages.
-
-- Gradients for non-webkit browsers.
-
-#### Usage
-
-**CSS code:**
-```css
-#magazine{
-	width: 800px;
-	height: 400px;
-}
-#magazine .turn-page{
-	background-color:#ccc;
-}
+```bash
+xdg-open demos/minimal/index.html
 ```
 
-**HTML code:**
+The demo loads:
+
+- jQuery `4.0.0` from the jQuery CDN;
+- `../../turn.js`;
+- local image assets from `demos/minimal/assets`.
+
+It includes a six-page book, previous/next controls, keyboard navigation, text, and images.
+
+## Installation for Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+The development dependencies include:
+
+- `jquery` `4.0.0`;
+- `vitest`;
+- `jsdom`;
+- `@playwright/test`.
+
+## Usage
+
+Basic HTML:
+
 ```html
 <div id="magazine">
-	<div><span class="text">Page 1</span></div>
-	<div><span class="text">Page 2</span></div>
-	<div><span class="text">Page 3</span></div>
+  <div>Page 1</div>
+  <div>Page 2</div>
+  <div>Page 3</div>
+  <div>Page 4</div>
 </div>
 ```
 
-**JavaScript code:**
-```javascript
-$('#magazine').turn({gradients: true, acceleration: true});
+Basic CSS:
+
+```css
+#magazine {
+  width: 800px;
+  height: 400px;
+}
+
+#magazine .turn-page {
+  background: #f4f4f4;
+}
 ```
 
-#### Requirements
+Basic JavaScript:
 
-jQuery 1.7 or later
+```html
+<script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+<script src="turn.js"></script>
+<script>
+  $('#magazine').turn({
+    width: 800,
+    height: 400,
+    gradients: true,
+    acceleration: true
+  });
+</script>
+```
 
-#### Browser support
-* Chrome 12, Safari 5, Firefox 10, IE 9
+Destroying an instance:
 
-#### License
-Released under a non-commercial BSD license
+```javascript
+$('#magazine').turn('destroy');
+```
 
-[Full documentation](https://github.com/blasten/turn.js/wiki/Reference)
+After `destroy`, the original page elements are restored as direct children of `#magazine`, turn.js wrappers are removed, and the element can be initialized again.
 
-* * *
+## API Notes
 
-[turnjs.com](http://www.turnjs.com/)
+Common methods from the original 3rd release remain available:
+
+- `page`
+- `next`
+- `previous`
+- `addPage`
+- `removePage`
+- `hasPage`
+- `pages`
+- `display`
+- `size`
+- `resize`
+- `disable`
+- `destroy`
+
+The new `destroy` method is intended for teardown in single-page applications, tests, page transitions, and any workflow where a book needs to be removed or initialized again without leaving DOM wrappers or document event handlers behind.
+
+## Tests
+
+Run the full test suite:
+
+```bash
+npm test
+```
+
+Run only unit tests:
+
+```bash
+npm run test:unit
+```
+
+Run only Playwright visual tests:
+
+```bash
+npm run test:visual
+```
+
+Update Playwright snapshots after an intentional visual change:
+
+```bash
+npm run test:visual:update
+```
+
+The current suite covers:
+
+- plugin registration;
+- initialization state;
+- initial page selection;
+- dynamic `addPage` / `removePage`;
+- event namespace registration;
+- `destroy` cleanup and re-initialization;
+- minimal demo rendering;
+- page turn rendering;
+- compact viewport geometry;
+- page measurements during animation.
+
+## Requirements
+
+- Node.js for development and tests.
+- jQuery `4.0.0` for the current maintained demo and test setup.
+- A browser supported by Playwright for visual tests.
+
+Older jQuery versions were part of the compatibility spike, but this repository now uses jQuery `4.0.0` as the modern target for its demo and automated tests.
+
+## Browser Support
+
+The original README listed Chrome 12, Safari 5, Firefox 10, and IE 9 for the historical 3rd release.
+
+This maintained copy targets modern browsers, but the current automated coverage is limited to the configured Playwright browsers and the local test environment. Treat Safari/WebKit, mobile touch devices, and accessibility behavior as open validation work.
+
+## License
+
+Released under the original non-commercial BSD license. See [license.txt](license.txt).
+
+## Original Project
+
+- Original site: [turnjs.com](http://www.turnjs.com/)
+- Original documentation: [GitHub wiki reference](https://github.com/blasten/turn.js/wiki/Reference)
