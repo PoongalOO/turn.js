@@ -40,6 +40,24 @@ function sortedKeys(object) {
   return Object.keys(object).sort();
 }
 
+function expectTrackedWrappersToBeConnected($book) {
+  const state = $book.data();
+  const pageWrappers = Object.values(state.pageWrap || {}).map($wrapper => $wrapper[0]);
+  const flipStates = Object.values(state.pages || {}).map($page => $page.data('f'));
+
+  expect($book.find('.turn-page-wrapper').get()).toEqual(expect.arrayContaining(pageWrappers));
+
+  for (const wrapper of pageWrappers) {
+    expect(wrapper.isConnected).toBe(true);
+  }
+
+  for (const flipState of flipStates) {
+    expect(flipState.wrapper[0].isConnected).toBe(true);
+    expect(flipState.fwrapper[0].isConnected).toBe(true);
+    expect(flipState.fpage[0].isConnected).toBe(true);
+  }
+}
+
 describe('turn.js jQuery plugin', () => {
   let fixture;
 
@@ -241,6 +259,54 @@ describe('turn.js jQuery plugin', () => {
     expect($book.turn('hasPage', 5)).toBe(false);
   });
 
+  it('does not leave tracked wrappers orphaned after removePage', () => {
+    fixture.window.close();
+    fixture = createFixture(6);
+
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    $book.turn('removePage', 3);
+
+    expect($book.turn('pages')).toBe(5);
+    expect($book.turn('hasPage', 6)).toBe(false);
+    expectTrackedWrappersToBeConnected($book);
+    expect($book.find('.turn-page-wrapper').length).toBe(Object.keys($book.data('pageWrap')).length);
+  });
+
+  it('cleans the temporary single-display page when returning to double display', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    $book.turn('display', 'single');
+
+    expect($book.data('pageObjs')[0]).toBeDefined();
+    expect($book.find('.p-temporal').length).toBe(1);
+    expectTrackedWrappersToBeConnected($book);
+
+    $book.turn('display', 'double');
+
+    expect($book.data('pageObjs')[0]).toBeUndefined();
+    expect($book.find('.p-temporal').length).toBe(0);
+    expectTrackedWrappersToBeConnected($book);
+  });
+
   it('destroys a book, restores pages and removes turn.js state', () => {
     const { $ } = fixture;
     const $book = $('#book');
@@ -256,9 +322,11 @@ describe('turn.js jQuery plugin', () => {
 
     expect($book.find('.turn-page-wrapper').length).toBeGreaterThan(0);
     expect($book.children('.page').length).toBe(0);
+    const fparent = $book.data('fparent');
 
     $book.turn('destroy');
 
+    expect(fparent[0].isConnected).toBe(false);
     expect($book.data('externalValue')).toBe('keep-me');
     expect($book.data('opts')).toBeUndefined();
     expect($book.data('pages')).toBeUndefined();
