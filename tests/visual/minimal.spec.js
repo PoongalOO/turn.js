@@ -113,7 +113,7 @@ test('minimal demo keeps page measurements aligned during a page turn', async ({
   await expect(page.locator('#status')).toHaveText('Page 4 / 6');
 
   await page.locator('#next').click();
-  await page.waitForTimeout(160);
+  await page.waitForTimeout(80);
 
   const metrics = await page.evaluate(() => {
     const book = document.querySelector('#book').getBoundingClientRect();
@@ -142,6 +142,23 @@ test('minimal demo keeps page measurements aligned during a page turn', async ({
     expect(item.height, item.page).toBe(metrics.pageHeight);
     expect(item.jqueryWidth, item.page).toBe(metrics.pageWidth);
     expect(item.jqueryHeight, item.page).toBe(metrics.pageHeight);
+  }
+
+  const gradientImages = await page.evaluate(() => (
+    [...document.querySelectorAll('[style*="linear-gradient"]')]
+      .map(element => element.style.backgroundImage)
+      .filter(Boolean)
+  ));
+
+  expect(gradientImages.length).toBeGreaterThan(0);
+  for (const backgroundImage of gradientImages) {
+    expect(backgroundImage).not.toContain('255, 255, 255');
+
+    for (const match of backgroundImage.matchAll(/([0-9.]+)%/g)) {
+      const stop = Number(match[1]);
+      expect(stop).toBeGreaterThanOrEqual(0);
+      expect(stop).toBeLessThanOrEqual(100);
+    }
   }
 
   await expect(page.locator('#book')).toHaveScreenshot('minimal-book-turning-page-4.png');
