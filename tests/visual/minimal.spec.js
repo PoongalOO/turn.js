@@ -15,6 +15,7 @@ const jqueryPath = resolve(jqueryDist, 'jquery.min.js');
 const contentTypes = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml; charset=utf-8'
 };
 
@@ -162,4 +163,60 @@ test('minimal demo keeps page measurements aligned during a page turn', async ({
   }
 
   await expect(page.locator('#book')).toHaveScreenshot('minimal-book-turning-page-4.png');
+});
+
+test('magazine demo loads with jQuery 4 and turns pages', async ({ page }) => {
+  await page.goto(`${baseUrl}/demos/magazine/index.html`);
+  await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
+
+  await expect(page.locator('#status')).toHaveText('Page 1 / 6');
+  await page.locator('#next').click();
+  await expect(page.locator('#status')).toHaveText('Page 2 / 6');
+  await page.waitForTimeout(700);
+
+  const metrics = await page.evaluate(() => {
+    const book = document.querySelector('#magazine').getBoundingClientRect();
+    const wrapper = [...document.querySelectorAll('.turn-page-wrapper')]
+      .map(element => element.getBoundingClientRect())
+      .find(rect => rect.width && rect.height);
+    const size = $('#magazine').turn('size');
+
+    return {
+      book: { width: Math.round(book.width), height: Math.round(book.height) },
+      wrapper: { width: Math.round(wrapper.width), height: Math.round(wrapper.height) },
+      size
+    };
+  });
+
+  expect(metrics.size).toEqual(metrics.book);
+  expect(metrics.wrapper.height).toBe(metrics.book.height);
+  expect(metrics.wrapper.width).toBe(metrics.book.width / 2);
+});
+
+test('single-page magazine demo loads with jQuery 4 and turns pages', async ({ page }) => {
+  await page.goto(`${baseUrl}/demos/magazine_single/index.html`);
+  await page.waitForFunction(() => window.jQuery && window.jQuery.fn.jquery === '4.0.0' && typeof window.jQuery.fn.turn === 'function');
+
+  await expect(page.locator('#status')).toHaveText('Page 1 / 6');
+  await page.locator('#next').click();
+  await expect(page.locator('#status')).toHaveText('Page 2 / 6');
+  await page.waitForTimeout(700);
+
+  const metrics = await page.evaluate(() => {
+    const book = document.querySelector('#magazine').getBoundingClientRect();
+    const wrapper = [...document.querySelectorAll('.turn-page-wrapper')]
+      .map(element => element.getBoundingClientRect())
+      .find(rect => rect.width && rect.height);
+    const size = $('#magazine').turn('size');
+
+    return {
+      book: { width: Math.round(book.width), height: Math.round(book.height) },
+      wrapper: { width: Math.round(wrapper.width), height: Math.round(wrapper.height) },
+      size
+    };
+  });
+
+  expect(metrics.size).toEqual(metrics.book);
+  expect(metrics.wrapper.height).toBe(metrics.book.height);
+  expect(metrics.wrapper.width).toBe(metrics.book.width);
 });
