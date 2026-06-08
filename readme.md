@@ -25,7 +25,8 @@ Compatibility is not yet guaranteed for every modern browser or device. Safari/W
   - restores original page elements as direct children;
   - restores original `style` and `class` attributes;
   - removes turn.js internal jQuery data while preserving unrelated user data.
-- Fixed `animatef(false)` so cancelling an animation clears the active interval.
+- Replaced the internal `setInterval` animation loop with `requestAnimationFrame`.
+- Fixed `animatef(false)` so cancelling an animation cancels the scheduled animation frame.
 - Added a minimal browser demo using jQuery `4.0.0`.
 - Added text and local images to the minimal demo.
 - Fixed minimal demo layout so turn.js page measurements match the real rendered page size.
@@ -167,6 +168,7 @@ The current suite covers:
 - dynamic `addPage` / `removePage`;
 - event namespace registration;
 - `destroy` cleanup and re-initialization;
+- `requestAnimationFrame` scheduling and cancellation in `animatef`;
 - minimal demo rendering;
 - page turn rendering;
 - compact viewport geometry;
