@@ -58,6 +58,14 @@ function expectTrackedWrappersToBeConnected($book) {
   }
 }
 
+function captureThrownValue(callback) {
+  try {
+    callback();
+  } catch (error) {
+    return error;
+  }
+}
+
 describe('turn.js jQuery plugin', () => {
   let fixture;
 
@@ -76,6 +84,83 @@ describe('turn.js jQuery plugin', () => {
     expect($.fn.turn).toBeTypeOf('function');
     expect($.fn.flip).toBeTypeOf('function');
     expect($.fn.transform).toBeTypeOf('function');
+  });
+
+  it('supports the documented public turn API methods', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn('init', {
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    expect($book.turn('page')).toBe(1);
+    expect($book.turn('pages')).toBe(4);
+    expect($book.turn('size')).toEqual({ width: 600, height: 400 });
+
+    $book.turn('page', 2);
+    expect($book.turn('page')).toBe(2);
+
+    $book.turn('addPage', $('<div class="page">Page 5</div>'), 5);
+    expect($book.turn('pages')).toBe(5);
+
+    $book.turn('removePage', 5);
+    expect($book.turn('pages')).toBe(4);
+
+    $book.turn('pages', 4);
+    expect($book.turn('pages')).toBe(4);
+
+    $book.turn('size', 320, 240);
+    expect($book.turn('size')).toEqual({ width: 320, height: 240 });
+
+    $book.turn('display', 'single');
+    expect($book.turn('display')).toBe('single');
+
+    $book.turn('disable', true);
+    expect($book.data('disabled')).toBe(true);
+    $book.turn('disable', false);
+    expect($book.data('disabled')).toBe(false);
+
+    expect(captureThrownValue(() => $book.turn('next'))).toBeUndefined();
+    $book.turn('destroy');
+    expect($book.data('opts')).toBeUndefined();
+
+    fixture.window.close();
+    fixture = createFixture();
+    const $bookForPrevious = fixture.$('#book');
+
+    $bookForPrevious.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false,
+      page: 2
+    });
+
+    expect(captureThrownValue(() => $bookForPrevious.turn('previous'))).toBeUndefined();
+    $bookForPrevious.turn('destroy');
+  });
+
+  it('rejects invalid and private turn method calls', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    expect(captureThrownValue(() => $book.turn('unknownMethod'))).toBe('unknownMethod is an invalid value');
+    expect(captureThrownValue(() => $book.turn('_view'))).toBe('_view is an invalid value');
+    expect(captureThrownValue(() => $book.turn('display', 'spread')).message).toBe('"spread" is not a value for display');
   });
 
   it('calculates fold geometry without DOM for every corner', () => {

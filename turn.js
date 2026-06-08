@@ -394,6 +394,11 @@ var has3d,
 
 turnMethods = {
 
+	// Supported public turn API:
+	// init, page, next, previous, addPage, removePage, pages, size,
+	// display, disable and destroy.
+	// Methods prefixed with "_" are private implementation details.
+
 	// Singleton constructor
 	// $('#selector').turn([options]);
 
@@ -534,7 +539,7 @@ turnMethods = {
 		return this;
 	},
 
-	// Restores one page element and removes flip wrappers/state
+	// Internal: restores one page element and removes flip wrappers/state
 
 	_destroyPage: function(page) {
 
@@ -572,7 +577,7 @@ turnMethods = {
 		delete data.pagePlace[page];
 	},
 
-	// Creates the visible DOM wrapper that hosts a source page
+	// Internal: creates the visible DOM wrapper that hosts a source page
 
 	_createPageWrapper: function(page, width, height) {
 
@@ -589,7 +594,7 @@ turnMethods = {
 		return data.pageWrap[page];
 	},
 
-	// Removes the turn page wrapper for one page
+	// Internal: removes the turn page wrapper for one page
 
 	_removePageWrapper: function(page) {
 
@@ -602,7 +607,7 @@ turnMethods = {
 			delete data.pageWrap[page];
 	},
 
-	// Removes flip-specific wrappers for one page element
+	// Internal: removes flip-specific wrappers for one page element
 
 	_removeFlipWrappers: function(pageObj) {
 
@@ -1499,6 +1504,9 @@ turnMethods = {
 // Methods and properties for the flip page effect
 
 flipMethods = {
+
+	// Flip methods are internal to the page-fold effect. They remain callable
+	// through $.fn.flip for historical compatibility, but are not turn API.
 
 	// Constructor
 

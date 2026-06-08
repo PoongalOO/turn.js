@@ -126,20 +126,21 @@ After `destroy`, the original page elements are restored as direct children of `
 
 ## API Notes
 
-Common methods from the original 3rd release remain available:
+Supported public turn API:
 
+- `init` / `$('#magazine').turn(options)`
 - `page`
 - `next`
 - `previous`
 - `addPage`
 - `removePage`
-- `hasPage`
 - `pages`
-- `display`
 - `size`
-- `resize`
+- `display`
 - `disable`
 - `destroy`
+
+Methods whose names start with `_` are private implementation details. Other legacy helpers may still exist for internal compatibility, but they are not documented as supported API.
 
 The new `destroy` method is intended for teardown in single-page applications, tests, page transitions, and any workflow where a book needs to be removed or initialized again without leaving DOM wrappers or document event handlers behind.
 
