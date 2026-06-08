@@ -126,20 +126,21 @@ Après `destroy`, les pages originales sont restaurées comme enfants directs de
 
 ## Notes d'API
 
-Les méthodes courantes de la 3e release originale restent disponibles :
+API publique supportée de turn :
 
+- `init` / `$('#magazine').turn(options)`
 - `page`
 - `next`
 - `previous`
 - `addPage`
 - `removePage`
-- `hasPage`
 - `pages`
-- `display`
 - `size`
-- `resize`
+- `display`
 - `disable`
 - `destroy`
+
+Les méthodes dont le nom commence par `_` sont des détails d'implémentation privés. D'autres helpers historiques peuvent encore exister pour compatibilité interne, mais ils ne sont pas documentés comme API supportée.
 
 La nouvelle méthode `destroy` sert au démontage dans les applications monopages, les tests, les transitions de vue et tous les cas où un livre doit être supprimé ou réinitialisé sans laisser de wrappers DOM ni de handlers sur le document.
 
