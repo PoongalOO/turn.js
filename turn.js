@@ -29,9 +29,14 @@ var has3d,
 
 	A90 = PI/2,
 
+	hasPointer = 'PointerEvent' in window,
+
 	isTouch = 'ontouchstart' in window,
 
-	events = (isTouch) ? {start: 'touchstart', move: 'touchmove', end: 'touchend'}
+	usesTouchEvents = !hasPointer && isTouch,
+
+	events = (hasPointer) ? {start: 'pointerdown', move: 'pointermove', end: 'pointerup pointercancel'}
+			: (usesTouchEvents) ? {start: 'touchstart', move: 'touchmove', end: 'touchend'}
 			: {start: 'mousedown', move: 'mousemove', end: 'mouseup'},
 
 	frameTime = (window.performance && window.performance.now) ?
@@ -205,6 +210,12 @@ var has3d,
 
 	has = function(property, object) {
 		return Object.prototype.hasOwnProperty.call(object, property);
+	},
+
+	namespacedEvents = function(names, namespace) {
+		return $.map(names.split(' '), function(name) {
+			return name + namespace;
+		}).join(' ');
 	},
 
 	clamp = function(value, min, max) {
@@ -474,10 +485,10 @@ turnMethods = {
 			}
 		};
 
-		$(this).on(events.start + turnEventNamespace, data.eventHandlers.start);
+		$(this).on(namespacedEvents(events.start, turnEventNamespace), data.eventHandlers.start);
 			
-		$(document).on(events.move + turnEventNamespace, data.eventHandlers.move).
-			on(events.end + turnEventNamespace, data.eventHandlers.end);
+		$(document).on(namespacedEvents(events.move, turnEventNamespace), data.eventHandlers.move).
+			on(namespacedEvents(events.end, turnEventNamespace), data.eventHandlers.end);
 
 		data.done = true;
 
@@ -500,10 +511,10 @@ turnMethods = {
 		this.off(turnEventNamespace);
 
 		if (data.eventHandlers) {
-			this.off(events.start + turnEventNamespace, data.eventHandlers.start);
+			this.off(namespacedEvents(events.start, turnEventNamespace), data.eventHandlers.start);
 			$(document).
-				off(events.move + turnEventNamespace, data.eventHandlers.move).
-				off(events.end + turnEventNamespace, data.eventHandlers.end);
+				off(namespacedEvents(events.move, turnEventNamespace), data.eventHandlers.move).
+				off(namespacedEvents(events.end, turnEventNamespace), data.eventHandlers.end);
 		}
 
 		for (page in data.pageObjs) {
@@ -1569,7 +1580,7 @@ flipMethods = {
 			return false;
 		}		
 
-		e = (isTouch) ? e.originalEvent.touches : [e];
+		e = (usesTouchEvents) ? e.originalEvent.touches : [e];
 
 		var data = flipData(this),
 			pos = data.parent.offset(),
@@ -2066,7 +2077,7 @@ flipMethods = {
 		var data = this.data().f;
 
 		if (!data.disabled) {
-			e = (isTouch) ? e.originalEvent.touches : [e];
+			e = (usesTouchEvents) ? e.originalEvent.touches : [e];
 		
 			if (data.corner) {
 

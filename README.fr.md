@@ -15,6 +15,7 @@ La compatibilité avec tous les navigateurs et appareils modernes n'est pas enco
 ## Modifications réalisées
 
 - Migration des enregistrements d'événements internes depuis les anciens patterns jQuery `.bind()` / `.unbind()` vers `.on()` / `.off()`.
+- Modernisation des événements d'entrée pour privilégier Pointer Events quand ils sont disponibles, tout en conservant les chemins touch et souris en fallback.
 - Ajout de namespaces d'événements :
   - `.turn` pour les événements du livre et du document ;
   - `.turnFlip` pour les événements internes des pages pliées.

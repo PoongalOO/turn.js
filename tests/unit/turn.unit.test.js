@@ -23,6 +23,11 @@ function createFixture(pageCount = 4, windowOptions = {}) {
   });
 
   Object.entries(windowOptions).forEach(([key, value]) => {
+    if (value === undefined) {
+      delete dom.window[key];
+      return;
+    }
+
     Object.defineProperty(dom.window, key, {
       value,
       configurable: true,
@@ -718,16 +723,67 @@ describe('turn.js jQuery plugin', () => {
       .map(call => call[0])
       .filter(name => typeof name === 'string');
 
-    const pointerEvents = $.isTouch
-      ? ['touchstart.turn', 'touchmove.turn', 'touchend.turn']
-      : ['mousedown.turn', 'mousemove.turn', 'mouseup.turn'];
-
     expect(eventNames).toContain('turned.turn');
-    expect(eventNames).toEqual(expect.arrayContaining(pointerEvents));
+    expect(eventNames).toContain('pointerdown.turn');
+    expect(eventNames).toContain('pointermove.turn');
+    expect(eventNames).toContain('pointerup.turn pointercancel.turn');
     expect(eventNames).toContain('pressed.turnFlip');
     expect(eventNames).toContain('released.turnFlip');
     expect(eventNames).toContain('start.turnFlip');
     expect(eventNames).toContain('end.turnFlip');
     expect(eventNames).toContain('flip.turnFlip');
+  });
+
+  it('falls back to touch events when Pointer Events are unavailable', () => {
+    fixture.window.close();
+    fixture = createFixture(4, {
+      PointerEvent: undefined
+    });
+
+    const { $ } = fixture;
+    const onSpy = vi.spyOn($.fn, 'on');
+
+    $('#book').turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    const eventNames = onSpy.mock.calls
+      .map(call => call[0])
+      .filter(name => typeof name === 'string');
+
+    expect(eventNames).toContain('touchstart.turn');
+    expect(eventNames).toContain('touchmove.turn');
+    expect(eventNames).toContain('touchend.turn');
+  });
+
+  it('removes pointer event handlers on destroy', () => {
+    fixture.window.close();
+    fixture = createFixture();
+
+    const { $ } = fixture;
+    const offSpy = vi.spyOn($.fn, 'off');
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    $book.turn('destroy');
+
+    const eventNames = offSpy.mock.calls
+      .map(call => call[0])
+      .filter(name => typeof name === 'string');
+
+    expect(eventNames).toContain('pointerdown.turn');
+    expect(eventNames).toContain('pointermove.turn');
+    expect(eventNames).toContain('pointerup.turn pointercancel.turn');
   });
 });

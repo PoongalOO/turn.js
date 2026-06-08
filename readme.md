@@ -15,6 +15,7 @@ Compatibility is not yet guaranteed for every modern browser or device. Safari/W
 ## What Changed
 
 - Updated internal event registration from deprecated jQuery `.bind()` / `.unbind()` patterns to `.on()` / `.off()`.
+- Modernized input events to prefer Pointer Events when available, with the existing touch and mouse paths kept as fallbacks.
 - Added event namespaces:
   - `.turn` for book-level and document-level turn.js events.
   - `.turnFlip` for internal flip-page events.
