@@ -25,7 +25,8 @@ La compatibilité avec tous les navigateurs et appareils modernes n'est pas enco
   - restaure les pages originales comme enfants directs ;
   - restaure les attributs `style` et `class` d'origine ;
   - supprime les données jQuery internes de turn.js sans effacer les données utilisateur sans lien.
-- Correction de `animatef(false)` pour que l'annulation d'une animation nettoie bien l'intervalle actif.
+- Remplacement de la boucle d'animation interne `setInterval` par `requestAnimationFrame`.
+- Correction de `animatef(false)` pour que l'annulation d'une animation annule bien la frame planifiée.
 - Ajout d'une démo navigateur minimale avec jQuery `4.0.0`.
 - Ajout de texte et d'images locales dans la démo minimale.
 - Correction de la mise en page de la démo minimale afin que les dimensions mesurées par turn.js correspondent à la taille réellement rendue des pages.
@@ -167,6 +168,7 @@ La suite actuelle couvre :
 - `addPage` / `removePage` dynamiques ;
 - l'enregistrement des namespaces d'événements ;
 - le nettoyage `destroy` et la réinitialisation ;
+- la planification et l'annulation `requestAnimationFrame` dans `animatef` ;
 - le rendu de la démo minimale ;
 - le rendu après page tournée ;
 - la géométrie en viewport compact ;

@@ -34,6 +34,20 @@ var has3d,
 	events = (isTouch) ? {start: 'touchstart', move: 'touchmove', end: 'touchend'}
 			: {start: 'mousedown', move: 'mousemove', end: 'mouseup'},
 
+	frameTime = (window.performance && window.performance.now) ?
+			function() { return window.performance.now(); } :
+			function() { return new Date().getTime(); },
+
+	requestFrame = window.requestAnimationFrame ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame ||
+			function(callback) { return window.setTimeout(function() { callback(frameTime()); }, 16); },
+
+	cancelFrame = window.cancelAnimationFrame ||
+			window.webkitCancelAnimationFrame ||
+			window.mozCancelAnimationFrame ||
+			function(handle) { window.clearTimeout(handle); },
+
 	turnEventNamespace = '.turn',
 
 	turnFlipEventNamespace = '.turnFlip',
@@ -2008,7 +2022,7 @@ $.extend($.fn, {
 		var data = this.data();
 
 		if (data.effect)
-			clearInterval(data.effect.handle);
+			cancelFrame(data.effect.handle);
 
 		if (point) {
 
@@ -2019,11 +2033,16 @@ $.extend($.fn, {
 			var j, diff = [],
 				len = point.to.length,
 				that = this,
-				fps = point.fps || 30,
-				time = - fps,
-				f = function() {
-					var j, v = [];
-					time = Math.min(point.duration, time + fps);
+				startTime = frameTime(),
+				f = function(timestamp) {
+
+					if (that.data().effect!==point)
+						return;
+
+					timestamp = timestamp || frameTime();
+
+					var time = Math.min(point.duration, Math.max(0, timestamp - startTime)),
+						j, v = [];
 	
 					for (j = 0; j < len; j++)
 						v.push(point.easing(1, time, point.from[j], diff[j], point.duration));
@@ -2031,24 +2050,25 @@ $.extend($.fn, {
 					point.frame((len==1) ? v[0] : v);
 
 					if (time==point.duration) {
-						clearInterval(data.effect.handle);
 						delete data['effect'];
 						that.data(data);
 						if (point.complete)
 							point.complete();
-						}
-					};
+					} else {
+						data.effect.handle = requestFrame(f);
+						that.data(data);
+					}
+				};
 
 			for (j = 0; j < len; j++)
 				diff.push(point.to[j] - point.from[j]);
 
 			data.effect = point;
-			data.effect.handle = setInterval(f, fps);
 			this.data(data);
-			f();
+			f(startTime);
 		} else {
 			if (data.effect && data.effect.handle)
-				clearInterval(data.effect.handle);
+				cancelFrame(data.effect.handle);
 			delete data['effect'];
 		}
 	}
