@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title">
+  <title id="title">Image abstraite avec cadres de contenu</title>
+  <rect width="640" height="360" fill="#fff7ed"/>
+  <rect x="78" y="58" width="484" height="244" rx="14" fill="#ffffff" stroke="#9aa7ba" stroke-width="4"/>
+  <rect x="112" y="94" width="212" height="156" rx="10" fill="#fed7aa"/>
+  <circle cx="162" cy="136" r="24" fill="#f97316"/>
+  <path d="M112 250l82-74 58 48 42-34 30 60z" fill="#fb923c"/>
+  <path d="M370 112h124M370 152h92M370 192h136M370 232h108" stroke="#64748b" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -34,6 +34,10 @@ var has3d,
 	events = (isTouch) ? {start: 'touchstart', move: 'touchmove', end: 'touchend'}
 			: {start: 'mousedown', move: 'mousemove', end: 'mouseup'},
 
+	turnEventNamespace = '.turn',
+
+	turnFlipEventNamespace = '.turnFlip',
+
 	// Contansts used for each corner
 	// tl * tr
 	// *     *
@@ -255,7 +259,7 @@ turnMethods = {
 		if (opts.when)
 			for (i in opts.when)
 				if (has(i, opts.when))
-					this.bind(i, opts.when[i]);
+					this.on(i + turnEventNamespace, opts.when[i]);
 
 
 		this.css({position: 'relative', width: opts.width, height: opts.height});
@@ -275,18 +279,18 @@ turnMethods = {
 
 		// Event listeners
 
-		$(this).bind(events.start, function(e) {
+		$(this).on(events.start + turnEventNamespace, function(e) {
 			for (var page in data.pages)
 				if (has(page, data.pages) && flipMethods._eventStart.call(data.pages[page], e)===false)
 					return false;
 		});
 			
-		$(document).bind(events.move, function(e) {
+		$(document).on(events.move + turnEventNamespace, function(e) {
 			for (var page in data.pages)
 				if (has(page, data.pages))
 					flipMethods._eventMove.call(data.pages[page], e);
 		}).
-		bind(events.end, function(e) {
+		on(events.end + turnEventNamespace, function(e) {
 			for (var page in data.pages)
 				if (has(page, data.pages))
 					flipMethods._eventEnd.call(data.pages[page], e);
@@ -431,11 +435,11 @@ turnMethods = {
 									frontGradient: data.opts.gradients
 									}).
 									flip('disable', data.disabled).
-									bind('pressed', turnMethods._pressed).
-									bind('released', turnMethods._released).
-									bind('start', turnMethods._start).
-									bind('end', turnMethods._end).
-									bind('flip', turnMethods._flip);
+									on('pressed' + turnFlipEventNamespace, turnMethods._pressed).
+									on('released' + turnFlipEventNamespace, turnMethods._released).
+									on('start' + turnFlipEventNamespace, turnMethods._start).
+									on('end' + turnFlipEventNamespace, turnMethods._end).
+									on('flip' + turnFlipEventNamespace, turnMethods._flip);
 		}
 		return data.pages[page];
 	},
