@@ -252,6 +252,36 @@ describe('turn.js jQuery plugin', () => {
     expect($book.find('.turn-page-wrapper').length).toBeGreaterThan(0);
   });
 
+  it('uses CSS classes instead of inline styles for static wrapper styling', () => {
+    const { document, $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: true,
+      acceleration: false
+    });
+
+    const state = $book.data();
+    const pageWrapper = state.pageWrap[1][0];
+    const flipState = state.pages[1].data('f');
+
+    expect(document.getElementById('turn-js-base-css')).toBeTruthy();
+    expect(pageWrapper.classList.contains('turn-page-wrapper')).toBe(true);
+    expect(pageWrapper.style.position).toBe('');
+    expect(pageWrapper.style.overflow).toBe('');
+    expect(flipState.wrapper[0].classList.contains('turn-flip-wrapper')).toBe(true);
+    expect(flipState.wrapper[0].style.position).toBe('');
+    expect(flipState.wrapper[0].style.overflow).toBe('');
+    expect(flipState.fwrapper[0].classList.contains('turn-fold-wrapper')).toBe(true);
+    expect(flipState.fwrapper[0].style.position).toBe('');
+    expect(flipState.fwrapper[0].style.overflow).toBe('');
+    expect(flipState.fparent[0].classList.contains('turn-fold-parent')).toBe(true);
+    expect(flipState.fparent[0].style.pointerEvents).toBe('');
+  });
+
   it('supports initial page selection without animation', () => {
     const { $ } = fixture;
     const $book = $('#book');

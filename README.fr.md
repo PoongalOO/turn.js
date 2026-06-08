@@ -31,6 +31,7 @@ La compatibilité avec tous les navigateurs et appareils modernes n'est pas enco
   - les gradients utilisent maintenant la syntaxe standard `linear-gradient(...deg, ...)` ;
   - les gradients de pli conservent des stops normalisés entre `0` et `100%` avec des ombres plus douces, sans highlight blanc ;
   - les transforms écrivent maintenant les propriétés standard `transform` et `transform-origin`, avec fallback préfixé quand il est détecté.
+- Déplacement des styles statiques des wrappers vers `turn.css` et des classes internes, en conservant inline les valeurs dynamiques de taille, position, z-index, transform et gradient.
 - Ajout d'une démo navigateur minimale avec jQuery `4.0.0`.
 - Ajout de texte et d'images locales dans la démo minimale.
 - Correction de la mise en page de la démo minimale afin que les dimensions mesurées par turn.js correspondent à la taille réellement rendue des pages.
@@ -50,6 +51,7 @@ xdg-open demos/minimal/index.html
 La démo charge :
 
 - jQuery `4.0.0` depuis le CDN jQuery ;
+- `../../turn.css` ;
 - `../../turn.js` ;
 - des images locales depuis `demos/minimal/assets`.
 
@@ -99,6 +101,7 @@ CSS minimal :
 JavaScript minimal :
 
 ```html
+<link rel="stylesheet" href="turn.css">
 <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
 <script src="turn.js"></script>
 <script>
@@ -110,6 +113,8 @@ JavaScript minimal :
   });
 </script>
 ```
+
+`turn.css` contient les styles statiques des wrappers internes de turn.js. `turn.js` injecte aussi ces règles de base en fallback pour les pages existantes qui ne chargent que le script, mais charger explicitement la feuille de style est recommandé.
 
 Détruire une instance :
 

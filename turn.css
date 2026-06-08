@@ -1,0 +1,30 @@
+.turn-page {
+  position: absolute;
+}
+
+.turn-page-wrapper,
+.turn-flip-wrapper,
+.turn-fold-wrapper,
+.turn-shadow {
+  position: absolute;
+  overflow: hidden;
+}
+
+.turn-fold-parent {
+  position: absolute;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.turn-fold-inner {
+  position: absolute;
+  overflow: visible;
+}
+
+.turn-fold-page {
+  cursor: default;
+}
+
+.turn-back-shadow {
+  overflow: hidden;
+}
