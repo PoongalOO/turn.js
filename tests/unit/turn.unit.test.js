@@ -154,6 +154,85 @@ describe('turn.js jQuery plugin', () => {
     }
   });
 
+  it('builds normalized linear gradients without legacy syntax or white highlights', () => {
+    fixture.window.close();
+    fixture = createFixture(4, {
+      __TURNJS_TEST_HOOKS__: {}
+    });
+
+    const buildLinearGradient = fixture.window.__TURNJS_TEST_HOOKS__.buildLinearGradient;
+    const gradient = buildLinearGradient(
+      { x: 0, y: 0 },
+      { x: -10, y: 0 },
+      [
+        [-1, 'rgba(0,0,0,0)'],
+        [0.5, 'rgba(0,0,0,0.12)'],
+        [2, 'rgba(0,0,0,0)']
+      ],
+      3
+    );
+
+    expect(gradient).toMatch(/^linear-gradient\(180deg,/);
+    expect(gradient).not.toContain('-webkit-gradient');
+    expect(gradient).not.toContain('255, 255, 255');
+    expect([...gradient.matchAll(/([0-9.]+)%/g)].map(match => Number(match[1]))).toEqual([
+      0,
+      50,
+      100
+    ]);
+  });
+
+  it('normalizes fold gradient opacity for tiny and large folds', () => {
+    fixture.window.close();
+    fixture = createFixture(4, {
+      __TURNJS_TEST_HOOKS__: {}
+    });
+
+    const calculateFoldGeometry = fixture.window.__TURNJS_TEST_HOOKS__.calculateFoldGeometry;
+    const base = {
+      point: { corner: 'tl', x: 90, y: 120 },
+      origin: { x: 0, y: 0 },
+      width: 300,
+      height: 400,
+      wrapperHeight: 500,
+      frontGradient: true,
+      backGradient: true
+    };
+
+    const tinyFold = calculateFoldGeometry({
+      ...base,
+      endingPoint: { x: 90, y: 120 }
+    });
+    const largeFold = calculateFoldGeometry({
+      ...base,
+      endingPoint: { x: 600, y: 0 }
+    });
+
+    expect(tinyFold.gradient.opacity).toBe(0);
+    expect(largeFold.gradient.opacity).toBe(1);
+  });
+
+  it('does not create gradient shadow layers when gradients are disabled', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    const pageState = $book.data('pages')[1].data('f');
+
+    expect(pageState.opts.frontGradient).toBe(false);
+    expect(pageState.opts.backGradient).toBe(false);
+    expect(pageState.ashadow).toBeUndefined();
+    expect(pageState.bshadow).toBeUndefined();
+    expect($book.find('[style*="linear-gradient"]').length).toBe(0);
+  });
+
   it('initializes a book and exposes page, view, pages and size state', () => {
     const { $ } = fixture;
     const $book = $('#book');

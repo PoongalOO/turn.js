@@ -191,6 +191,18 @@ var has3d,
 		return Object.prototype.hasOwnProperty.call(object, property);
 	},
 
+	clamp = function(value, min, max) {
+		value = parseFloat(value);
+		return Math.max(min, Math.min(max, isNaN(value) ? min : value));
+	},
+
+	normalizeDegrees = function(degrees) {
+		degrees = degrees%360;
+		if (degrees<0)
+			degrees += 360;
+		return degrees===0 ? 0 : degrees;
+	},
+
 	// Internal book state stored on the root element with $.data().
 	// This helper keeps direct $.data() reads easy to identify.
 
@@ -293,7 +305,7 @@ var has3d,
 			gradientSize = side*Math.sin(alpha);
 			var far = Math.sqrt(Math.pow(opts.endingPoint.x-point.x, 2)+Math.pow(opts.endingPoint.y-point.y, 2));
 
-			gradientOpacity = (far<width) ? far/width : 1;
+			gradientOpacity = clamp((far<width) ? far/width : 1, 0, 1);
 
 			if (opts.frontGradient) {
 
@@ -339,23 +351,29 @@ var has3d,
 		};
 	},
 
-	// Adds gradients
+	// Builds a modern linear-gradient string from points and normalized stops
 
-	gradient = function(obj, p0, p1, colors, numColors) {
-	
+	buildLinearGradient = function(p0, p1, colors, numColors) {
+
 		var j, cols = [],
 			dx = p1.x-p0.x,
 			dy = p1.y-p0.y,
-			angle = Math.atan2(dy, dx),
+			angle = normalizeDegrees(-deg(Math.atan2(dy, dx))),
 			stop;
 
 		for (j = 0; j<numColors; j++) {
-			stop = Math.max(0, Math.min(1, colors[j][0])) * 100;
+			stop = clamp(colors[j][0], 0, 1) * 100;
 			cols.push(' '+colors[j][1]+' '+stop+'%');
 		}
 
-		var backgroundImage = 'linear-gradient(' + (-deg(angle)) + 'deg,' + cols.join(',') + ')';
-		obj.css({'background-image': backgroundImage});
+		return 'linear-gradient(' + angle + 'deg,' + cols.join(',') + ')';
+	},
+
+	// Adds gradients
+
+	gradient = function(obj, p0, p1, colors, numColors) {
+
+		obj.css({'background-image': buildLinearGradient(p0, p1, colors, numColors)});
 	},
 
 turnMethods = {
@@ -2163,8 +2181,10 @@ $.extend($.fn, {
 });
 
 
-if (window.__TURNJS_TEST_HOOKS__)
+if (window.__TURNJS_TEST_HOOKS__) {
 	window.__TURNJS_TEST_HOOKS__.calculateFoldGeometry = calculateFoldGeometry;
+	window.__TURNJS_TEST_HOOKS__.buildLinearGradient = buildLinearGradient;
+}
 
 $.isTouch = isTouch;
 
