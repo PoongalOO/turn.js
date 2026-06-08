@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title">
+  <title id="title">Fleches de navigation autour d'un livre</title>
+  <rect width="640" height="360" fill="#f0fdf4"/>
+  <rect x="184" y="78" width="128" height="206" rx="8" fill="#fff7d6" stroke="#718096" stroke-width="4"/>
+  <rect x="328" y="78" width="128" height="206" rx="8" fill="#dff0ff" stroke="#718096" stroke-width="4"/>
+  <path d="M320 78v206" stroke="#64748b" stroke-width="5"/>
+  <path d="M128 180h-54m0 0 26-26m-26 26 26 26M512 180h54m0 0-26-26m26 26-26 26" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

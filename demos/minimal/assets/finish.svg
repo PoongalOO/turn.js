@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-labelledby="title">
+  <title id="title">Marque de validation sur une page</title>
+  <rect width="640" height="360" fill="#eef2ff"/>
+  <rect x="184" y="58" width="272" height="244" rx="18" fill="#ffffff" stroke="#7c8aa0" stroke-width="4"/>
+  <path d="M232 116h176M232 154h132M232 228h176" stroke="#94a3b8" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="320" cy="192" r="48" fill="#2563eb"/>
+  <path d="M296 193l17 17 33-42" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
