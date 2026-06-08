@@ -12,6 +12,8 @@ Ce fork a été testé avec jQuery `4.0.0` dans la démo minimale et il est couv
 
 La couverture visuelle automatisée tourne actuellement sur Chromium desktop et sur un viewport mobile compact Chromium. Un projet Playwright WebKit est configuré quand l'hôte possède les dépendances système WebKit requises ; sur la machine locale actuelle, il n'est pas activé car `libgstcodecparsers-1.0.so.0` est absente. Les appareils iOS/Android natifs, l'accessibilité et les régressions visuelles en contexte produit restent à valider spécifiquement.
 
+La stratégie de maintenance et les travaux futurs sont documentés dans [docs/roadmap.md](docs/roadmap.md).
+
 ## Modifications réalisées
 
 - Migration des enregistrements d'événements internes depuis les anciens patterns jQuery `.bind()` / `.unbind()` vers `.on()` / `.off()`.
