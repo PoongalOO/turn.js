@@ -383,28 +383,16 @@ turnMethods = {
 
 		var data = turnData(this),
 			pageObj = data.pageObjs[page],
-			pageData,
-			flipData,
 			original = data.pageDefaults && data.pageDefaults[page];
 
 		if (!pageObj)
 			return;
 
-		pageData = pageObj.data();
-		flipData = pageData && pageData.f;
-
 		pageObj.off(turnFlipEventNamespace).animatef(false);
 		pageObj.detach();
 
-		if (flipData) {
-			if (flipData.fwrapper)
-				flipData.fwrapper.remove();
-			if (flipData.wrapper)
-				flipData.wrapper.remove();
-		}
-
-		if (data.pageWrap[page])
-			data.pageWrap[page].remove();
+		turnMethods._removeFlipWrappers.call(this, pageObj);
+		turnMethods._removePageWrapper.call(this, page);
 
 		if (original) {
 			if (original.style===undefined)
@@ -425,6 +413,55 @@ turnMethods = {
 		delete data.pages[page];
 		delete data.pageWrap[page];
 		delete data.pagePlace[page];
+	},
+
+	// Creates the visible DOM wrapper that hosts a source page
+
+	_createPageWrapper: function(page, width, height) {
+
+		var data = turnData(this);
+
+		data.pageWrap[page] = $('<div/>', {'class': 'turn-page-wrapper',
+										page: page,
+										css: {position: 'absolute',
+										overflow: 'hidden',
+										width: width,
+										height: height}}).
+										css(pagePosition[(data.display=='double') ? page%2 : 0]);
+
+		this.append(data.pageWrap[page]);
+
+		return data.pageWrap[page];
+	},
+
+	// Removes the turn page wrapper for one page
+
+	_removePageWrapper: function(page) {
+
+		var data = turnData(this);
+
+		if (data.pageWrap && data.pageWrap[page])
+			data.pageWrap[page].remove();
+
+		if (data.pageWrap)
+			delete data.pageWrap[page];
+	},
+
+	// Removes flip-specific wrappers for one page element
+
+	_removeFlipWrappers: function(pageObj) {
+
+		var pageData = pageObj && pageObj.data(),
+			data = pageData && pageData.f;
+
+		if (!data)
+			return;
+
+		if (data.fwrapper)
+			data.fwrapper.remove();
+
+		if (data.wrapper)
+			data.wrapper.remove();
 	},
 
 	// Adds a page from external data
@@ -501,20 +538,8 @@ turnMethods = {
 					// Place
 					data.pagePlace[page] = page;
 
-					// Wrapper
-					data.pageWrap[page] = $('<div/>', {'class': 'turn-page-wrapper',
-													page: page,
-													css: {position: 'absolute',
-													overflow: 'hidden',
-													width: pageWidth,
-													height: pageHeight}}).
-													css(pagePosition[(data.display=='double') ? page%2 : 0]);
-
-					// Append to this
-					this.append(data.pageWrap[page]);
-
-					// Move data.pageObjs[page] (element) to wrapper
-					data.pageWrap[page].prepend(data.pageObjs[page]);
+					turnMethods._createPageWrapper.call(this, page, pageWidth, pageHeight).
+						prepend(data.pageObjs[page]);
 				}
 
 				// If the page is in the current view, create the flip effect
@@ -646,7 +671,7 @@ turnMethods = {
 
 	_removeFromDOM: function() {
 
-		var page, data = this.data();
+		var page, data = turnData(this);
 
 		for (page in data.pageWrap)
 			if (has(page, data.pageWrap) && !turnMethods._necessPage.call(this, page))
@@ -659,12 +684,10 @@ turnMethods = {
 
 	_removePageFromDOM: function(page) {
 
-		var data = this.data();
+		var data = turnData(this);
 
 		if (data.pages[page]) {
-			var dd = data.pages[page].data();
-			if (dd.f && dd.f.fwrapper)
-				dd.f.fwrapper.remove();
+			turnMethods._removeFlipWrappers.call(this, data.pages[page]);
 			data.pages[page].remove();
 			delete data.pages[page];
 		}
@@ -672,10 +695,7 @@ turnMethods = {
 		if (data.pageObjs[page])
 			data.pageObjs[page].remove();
 
-		if (data.pageWrap[page]) {
-			data.pageWrap[page].remove();
-			delete data.pageWrap[page];
-		}
+		turnMethods._removePageWrapper.call(this, page);
 
 		delete data.pagePlace[page];
 
@@ -685,7 +705,7 @@ turnMethods = {
 
 	removePage: function(page) {
 
-		var data = this.data();
+		var data = turnData(this);
 
 		if (data.pageObjs[page]) {
 			// Stop animations
@@ -716,7 +736,7 @@ turnMethods = {
 	_movePages: function(from, change) {
 
 		var page,
-			data = this.data(),
+			data = turnData(this),
 			single = data.display=='single',
 			move = function(page) {
 
@@ -758,7 +778,7 @@ turnMethods = {
 
 	display: function(display) {
 
-		var data = this.data(),
+		var data = turnData(this),
 			currentDisplay = data.display;
 
 		if (display) {
@@ -1459,6 +1479,29 @@ flipMethods = {
 
 	},
 
+	// Creates the shared parent for flip wrappers
+
+	_createFoldParent: function() {
+
+		var data = flipData(this),
+			fparent = $('<div/>', {css: {'pointer-events': 'none'}}).hide();
+
+		fparent.data().flips = 0;
+
+		if (data.opts.turn) {
+			fparent.css(divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto', 'visible').css).
+					appendTo(data.opts.turn);
+
+			turnData(data.opts.turn).fparent = fparent;
+		} else {
+			fparent.css(divAtt(0, 0, 'auto', 'visible').css).
+				attr('id', 'turn-fwrappers').
+					appendTo($('body'));
+		}
+
+		return fparent;
+	},
+
 	resize: function(full) {
 		
 		var data = this.data().f,
@@ -1510,25 +1553,10 @@ flipMethods = {
 				size = Math.round(Math.sqrt(Math.pow(width, 2)+Math.pow(height, 2)));
 			
 			data.parent = parent;
-			data.fparent = (data.opts.turn) ? data.opts.turn.data().fparent : $('#turn-fwrappers');
+			data.fparent = (data.opts.turn) ? turnData(data.opts.turn).fparent : $('#turn-fwrappers');
 
-			if (!data.fparent) {
-				var fparent = $('<div/>', {css: {'pointer-events': 'none'}}).hide();
-					fparent.data().flips = 0;
-
-				if (data.opts.turn) {
-					fparent.css(divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto', 'visible').css).
-							appendTo(data.opts.turn);
-					
-					data.opts.turn.data().fparent = fparent;
-				} else {
-					fparent.css(divAtt(0, 0, 'auto', 'visible').css).
-						attr('id', 'turn-fwrappers').
-							appendTo($('body'));
-				}
-
-				data.fparent = fparent;
-			}
+			if (!data.fparent)
+				data.fparent = flipMethods._createFoldParent.call(this);
 
 			this.css({position: 'absolute', top: 0, left: 0, bottom: 'auto', right: 'auto'});
 
