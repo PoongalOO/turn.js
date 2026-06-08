@@ -243,6 +243,52 @@ var has3d,
 		return page.data().f;
 	},
 
+	// Small internal rendering helpers. They centralize common jQuery DOM
+	// operations without changing the public API or replacing jQuery.
+
+	renderer = {
+		createWrapper: function(className, attrs, styles) {
+			return $('<div/>', $.extend({'class': className}, attrs || {})).css(styles || {});
+		},
+
+		applyStyles: function(element, styles) {
+			return element.css(styles);
+		},
+
+		removeNode: function(element) {
+			if (element)
+				element.remove();
+		},
+
+		append: function(parent, child) {
+			return parent.append(child);
+		},
+
+		prepend: function(parent, child) {
+			return parent.prepend(child);
+		},
+
+		transformProperties: function(transform, origin) {
+			var properties = {};
+			
+			if (origin) {
+				if (vendor)
+					properties[vendor+'transform-origin'] = origin;
+				properties['transform-origin'] = origin;
+			}
+			
+			if (vendor)
+				properties[vendor+'transform'] = transform;
+			properties.transform = transform;
+
+			return properties;
+		},
+
+		applyTransform: function(element, transform, origin) {
+			return renderer.applyStyles(element, renderer.transformProperties(transform, origin));
+		}
+	},
+
 	// Gets the CSS3 vendor prefix
 
 	getPrefix = function() {
@@ -400,7 +446,7 @@ var has3d,
 
 	gradient = function(obj, p0, p1, colors, numColors) {
 
-		obj.css({'background-image': buildLinearGradient(p0, p1, colors, numColors)});
+		renderer.applyStyles(obj, {'background-image': buildLinearGradient(p0, p1, colors, numColors)});
 	},
 
 turnMethods = {
@@ -449,7 +495,7 @@ turnMethods = {
 					this.on(i + turnEventNamespace, opts.when[i]);
 
 
-		this.css({position: 'relative', width: opts.width, height: opts.height});
+		renderer.applyStyles(this, {position: 'relative', width: opts.width, height: opts.height});
 
 		this.turn('display', opts.display);
 
@@ -520,14 +566,14 @@ turnMethods = {
 		for (page in data.pageObjs) {
 			if (!has(page, data.pageObjs) || page==='0' || !data.pageObjs[page]) continue;
 			turnMethods._destroyPage.call(this, page);
-			this.append(data.pageObjs[page]);
+			renderer.append(this, data.pageObjs[page]);
 		}
 
 		if (data.pageObjs[0])
 			turnMethods._destroyPage.call(this, 0);
 
 		if (data.fparent)
-			data.fparent.remove();
+			renderer.removeNode(data.fparent);
 
 		original = data.turnOriginal || {};
 
@@ -594,13 +640,13 @@ turnMethods = {
 
 		var data = turnData(this);
 
-		data.pageWrap[page] = $('<div/>', {'class': 'turn-page-wrapper',
-										page: page,
-										css: {width: width,
-										height: height}}).
-										css(pagePosition[(data.display=='double') ? page%2 : 0]);
+		data.pageWrap[page] = renderer.createWrapper('turn-page-wrapper',
+										{page: page},
+										{width: width, height: height});
 
-		this.append(data.pageWrap[page]);
+		renderer.applyStyles(data.pageWrap[page], pagePosition[(data.display=='double') ? page%2 : 0]);
+
+		renderer.append(this, data.pageWrap[page]);
 
 		return data.pageWrap[page];
 	},
@@ -612,7 +658,7 @@ turnMethods = {
 		var data = turnData(this);
 
 		if (data.pageWrap && data.pageWrap[page])
-			data.pageWrap[page].remove();
+			renderer.removeNode(data.pageWrap[page]);
 
 		if (data.pageWrap)
 			delete data.pageWrap[page];
@@ -629,10 +675,10 @@ turnMethods = {
 			return;
 
 		if (data.fwrapper)
-			data.fwrapper.remove();
+			renderer.removeNode(data.fwrapper);
 
 		if (data.wrapper)
-			data.wrapper.remove();
+			renderer.removeNode(data.wrapper);
 	},
 
 	// Adds a page from external data
@@ -704,7 +750,7 @@ turnMethods = {
 					var pageWidth = (data.display=='double') ? this.width()/2 : this.width(),
 						pageHeight = this.height();
 
-					element.css({width:pageWidth, height:pageHeight});
+					renderer.applyStyles(element, {width: pageWidth, height: pageHeight});
 
 					// Place
 					data.pagePlace[page] = page;
@@ -724,7 +770,7 @@ turnMethods = {
 
 				// Remove element from the DOM
 				if (data.pageObjs[page])
-					data.pageObjs[page].remove();
+					renderer.removeNode(data.pageObjs[page]);
 
 			}
 
@@ -749,8 +795,8 @@ turnMethods = {
 			var single = data.display=='single',
 				even = page%2;
 			
-			data.pages[page] = data.pageObjs[page].
-								css({width: (single) ? this.width() : this.width()/2, height: this.height()}).
+			data.pages[page] = renderer.applyStyles(data.pageObjs[page],
+								{width: (single) ? this.width() : this.width()/2, height: this.height()}).
 								flip({page: page,
 									next: (single && page === data.totalPages) ? page -1 : ((even || single) ? page+1 : page-1),
 									turn: this,
@@ -919,7 +965,7 @@ turnMethods = {
 
 				if (data.pagePlace[page] && data.pageWrap[page]) {
 					data.pagePlace[next] = next;
-					data.pageWrap[next] = data.pageWrap[page].css(pagePosition[(single) ? 0 : odd]).attr('page', next);
+					data.pageWrap[next] = renderer.applyStyles(data.pageWrap[page], pagePosition[(single) ? 0 : odd]).attr('page', next);
 					
 					if (data.pages[page])
 						data.pages[next] = data.pages[page].flip('options', {
@@ -961,15 +1007,14 @@ turnMethods = {
 				if (!data.pageObjs[0]) {
 					this.turn('stop').
 						css({'overflow': 'hidden'});
-					data.pageObjs[0] = $('<div />', {'class': 'turn-page p-temporal'}).
-									css({width: this.width(), height: this.height()}).
+					data.pageObjs[0] = renderer.createWrapper('turn-page p-temporal', null, {width: this.width(), height: this.height()}).
 										appendTo(this);
 				}
 			} else {
 				if (data.pageObjs[0]) {
 					this.turn('stop').
 						css({'overflow': ''});
-					data.pageObjs[0].remove();
+					renderer.removeNode(data.pageObjs[0]);
 					delete data.pageObjs[0];
 				}
 			}
@@ -1024,17 +1069,17 @@ turnMethods = {
 
 			var data = this.data(), pageWidth = (data.display=='double') ? width/2 : width, page;
 
-			this.css({width: width, height: height});
+			renderer.applyStyles(this, {width: width, height: height});
 
 			if (data.pageObjs[0])
-				data.pageObjs[0].css({width: pageWidth, height: height});
+				renderer.applyStyles(data.pageObjs[0], {width: pageWidth, height: height});
 			
 			for (page in data.pageWrap) {
 				if (!has(page, data.pageWrap)) continue;
-				data.pageObjs[page].css({width: pageWidth, height: height});
-				data.pageWrap[page].css({width: pageWidth, height: height});
+				renderer.applyStyles(data.pageObjs[page], {width: pageWidth, height: height});
+				renderer.applyStyles(data.pageWrap[page], {width: pageWidth, height: height});
 				if (data.pages[page])
-					data.pages[page].css({width: pageWidth, height: height});
+					renderer.applyStyles(data.pages[page], {width: pageWidth, height: height});
 			}
 
 			this.turn('resize');
@@ -1055,7 +1100,7 @@ turnMethods = {
 		var page, data = this.data();
 
 		if (data.pages[0]) {
-			data.pageWrap[0].css({left: -this.width()});
+			renderer.applyStyles(data.pageWrap[0], {left: -this.width()});
 			data.pages[0].flip('resize', true);
 		}
 
@@ -1465,7 +1510,7 @@ turnMethods = {
 
 				if (!has(page, data.pageWrap)) continue;
 
-				data.pageWrap[page].css({display: (pos.pageV[page]) ? '' : 'none', 'z-index': pos.pageZ[page] || 0});
+				renderer.applyStyles(data.pageWrap[page], {display: (pos.pageV[page]) ? '' : 'none', 'z-index': pos.pageZ[page] || 0});
 
 				if (data.pages[page]) {
 					data.pages[page].flip('z', pos.partZ[page] || null);
@@ -1500,13 +1545,13 @@ turnMethods = {
 			view = this.turn('view');
 
 		if (page==view[0] || page==view[1]) {
-			data.pageWrap[page].css({'z-index': data.totalPages, display: ''});
+			renderer.applyStyles(data.pageWrap[page], {'z-index': data.totalPages, display: ''});
 			return 1;
 		} else if ((data.display=='single' && page==view[0]+1) || (data.display=='double' && page==view[0]-2 || page==view[1]+2)) {
-			data.pageWrap[page].css({'z-index': data.totalPages-1, display: ''});
+			renderer.applyStyles(data.pageWrap[page], {'z-index': data.totalPages-1, display: ''});
 			return 2;
 		} else {
-			data.pageWrap[page].css({'z-index': 0, display: 'none'});
+			renderer.applyStyles(data.pageWrap[page], {'z-index': 0, display: 'none'});
 			return 0;
 		}
 	}
@@ -1563,7 +1608,7 @@ flipMethods = {
 
 		var data = flipData(this);
 		data.opts['z-index'] = z;
-		data.fwrapper.css({'z-index': z || parseInt(data.parent.css('z-index'), 10) || 0});
+		renderer.applyStyles(data.fwrapper, {'z-index': z || parseInt(data.parent.css('z-index'), 10) || 0});
 
 		return this;
 	},
@@ -1647,8 +1692,7 @@ flipMethods = {
 
 
 		if (gradient && !data.bshadow)
-			data.bshadow = $('<div/>', {'class': 'turn-back-shadow'}).
-				css({width: this.width(), height: this.height()}).
+			data.bshadow = renderer.createWrapper('turn-back-shadow', null, {width: this.width(), height: this.height()}).
 					appendTo(data.parent);
 
 		return gradient;
@@ -1665,12 +1709,12 @@ flipMethods = {
 		fparent.data().flips = 0;
 
 		if (data.opts.turn) {
-			fparent.css(divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto').css).
+			renderer.applyStyles(fparent, divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto').css).
 					appendTo(data.opts.turn);
 
 			turnData(data.opts.turn).fparent = fparent;
 		} else {
-			fparent.css(divAtt(0, 0, 'auto').css).
+			renderer.applyStyles(fparent, divAtt(0, 0, 'auto').css).
 				attr('id', 'turn-fwrappers').
 					appendTo($('body'));
 		}
@@ -1686,26 +1730,26 @@ flipMethods = {
 			size = Math.round(Math.sqrt(Math.pow(width, 2)+Math.pow(height, 2)));
 
 		if (full) {
-			data.wrapper.css({width: size, height: size});
-			data.fwrapper.css({width: size, height: size}).
+			renderer.applyStyles(data.wrapper, {width: size, height: size});
+			renderer.applyStyles(data.fwrapper, {width: size, height: size}).
 				children(':first-child').
 					css({width: width, height: height});
 
-			data.fpage.css({width: height, height: width});
+			renderer.applyStyles(data.fpage, {width: height, height: width});
 
 			if (data.opts.frontGradient)
-				data.ashadow.css({width: height, height: width});
+				renderer.applyStyles(data.ashadow, {width: height, height: width});
 
 			if (flipMethods._backGradient.call(this))
-				data.bshadow.css({width: width, height: height});
+				renderer.applyStyles(data.bshadow, {width: width, height: height});
 		}
 
 		if (data.parent.is(':visible')) {
-			data.fwrapper.css({top: data.parent.offset().top,
+			renderer.applyStyles(data.fwrapper, {top: data.parent.offset().top,
 				left: data.parent.offset().left});
 
 			if (data.opts.turn)
-				data.fparent.css({top: -data.opts.turn.offset().top, left: -data.opts.turn.offset().left});
+				renderer.applyStyles(data.fparent, {top: -data.opts.turn.offset().top, left: -data.opts.turn.offset().left});
 		}
 
 		this.flip('z', data.opts['z-index']);
@@ -1734,26 +1778,22 @@ flipMethods = {
 			if (!data.fparent)
 				data.fparent = flipMethods._createFoldParent.call(this);
 
-			this.css({top: 0, left: 0, bottom: 'auto', right: 'auto'});
+			renderer.applyStyles(this, {top: 0, left: 0, bottom: 'auto', right: 'auto'});
 
-			data.wrapper = $('<div/>', {'class': 'turn-flip-wrapper'}).
-								css(divAtt(0, 0, this.css('z-index')).css).
+			data.wrapper = renderer.createWrapper('turn-flip-wrapper', null, divAtt(0, 0, this.css('z-index')).css).
 								appendTo(parent).
 									prepend(this);
 
-			data.fwrapper = $('<div/>', {'class': 'turn-fold-wrapper'}).
-								css(divAtt(parent.offset().top, parent.offset().left).css).
+			data.fwrapper = renderer.createWrapper('turn-fold-wrapper', null, divAtt(parent.offset().top, parent.offset().left).css).
 								hide().
 									appendTo(data.fparent);
 
-			data.fpage = $('<div/>', {'class': 'turn-fold-page'}).
-					appendTo($('<div/>', {'class': 'turn-fold-inner'}).
-								css(divAtt(0, 0, 0).css).
+			data.fpage = renderer.createWrapper('turn-fold-page').
+					appendTo(renderer.createWrapper('turn-fold-inner', null, divAtt(0, 0, 0).css).
 								appendTo(data.fwrapper));
 
 			if (data.opts.frontGradient)
-				data.ashadow = $('<div/>', {'class': 'turn-shadow'}).
-					css(divAtt(0, 0,  1).css).
+				data.ashadow = renderer.createWrapper('turn-shadow', null, divAtt(0, 0,  1).css).
 					appendTo(data.fpage);
 
 			// Save data
@@ -1809,9 +1849,9 @@ flipMethods = {
 
 					x = x[0] + '% ' + x[1] + '%';
 
-				that.css(v).transform(rotate(a) + translate(tr.x + aliasingFk, tr.y, ac), x);
+				renderer.applyStyles(that, v).transform(rotate(a) + translate(tr.x + aliasingFk, tr.y, ac), x);
 
-				data.fpage.parent().css(v);
+				renderer.applyStyles(data.fpage.parent(), v);
 				data.wrapper.transform(translate(-tr.x + mvW-aliasingFk, -tr.y + mvH, ac) + rotate(-a), x);
 
 				data.fwrapper.transform(translate(-tr.x + mv.x + mvW, -tr.y + mv.y + mvH, ac) + rotate(-a), x);
@@ -1889,11 +1929,11 @@ flipMethods = {
 			if (bool) {
 				if (!data.fpage.children()[data.ashadow? '1' : '0']) {
 					flipMethods.setData.call(this, {backParent: folding.parent()});
-					data.fpage.prepend(folding);
+					renderer.prepend(data.fpage, folding);
 				}
 			} else {
 				if (data.backParent)
-					data.backParent.prepend(folding);
+					renderer.prepend(data.backParent, folding);
 
 			}
 		}
@@ -1958,7 +1998,7 @@ flipMethods = {
 		if ((--data.fparent.data().flips)===0)
 			data.fparent.hide();
 
-		this.css({left: 0, top: 0, right: 'auto', bottom: 'auto'}).transform('', '0% 100%');
+		renderer.applyStyles(this, {left: 0, top: 0, right: 'auto', bottom: 'auto'}).transform('', '0% 100%');
 
 		data.wrapper.transform('', '0% 100%');
 
@@ -2148,19 +2188,7 @@ $.extend($.fn, {
 
 	transform: function(transform, origin) {
 
-		var properties = {};
-		
-		if (origin) {
-			if (vendor)
-				properties[vendor+'transform-origin'] = origin;
-			properties['transform-origin'] = origin;
-		}
-		
-		if (vendor)
-			properties[vendor+'transform'] = transform;
-		properties.transform = transform;
-	
-		return this.css(properties);
+		return renderer.applyTransform(this, transform, origin);
 
 	},
 
