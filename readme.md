@@ -12,6 +12,8 @@ This fork has been smoke-tested with jQuery `4.0.0` in the minimal demo and cove
 
 Automated visual coverage currently runs on Chromium desktop and a compact Chromium mobile viewport. A WebKit Playwright project is configured when the host has the required WebKit system dependencies; on the current local machine it is not enabled because `libgstcodecparsers-1.0.so.0` is missing. Native iOS/Android devices, accessibility, and production visual regressions still need dedicated validation.
 
+Maintenance strategy and future work are documented in [docs/roadmap.md](docs/roadmap.md).
+
 ## What Changed
 
 - Updated internal event registration from deprecated jQuery `.bind()` / `.unbind()` patterns to `.on()` / `.off()`.
