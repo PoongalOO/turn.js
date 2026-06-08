@@ -36,6 +36,10 @@ function createFixture(pageCount = 4, windowOptions = {}) {
   return { window: dom.window, document: dom.window.document, $ };
 }
 
+function sortedKeys(object) {
+  return Object.keys(object).sort();
+}
+
 describe('turn.js jQuery plugin', () => {
   let fixture;
 
@@ -90,6 +94,130 @@ describe('turn.js jQuery plugin', () => {
 
     expect($book.turn('page')).toBe(2);
     expect($book.turn('view')).toEqual([2, 3]);
+  });
+
+  it('keeps documented book and flip state after initialization', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    const bookState = $book.data();
+
+    expect(sortedKeys(bookState)).toEqual([
+      'display',
+      'done',
+      'eventHandlers',
+      'fparent',
+      'opts',
+      'page',
+      'pageDefaults',
+      'pageMv',
+      'pageObjs',
+      'pagePlace',
+      'pageWrap',
+      'pages',
+      'totalPages',
+      'turnOriginal'
+    ]);
+    expect(bookState.opts).toMatchObject({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+    expect(bookState.turnOriginal).toEqual({
+      style: undefined,
+      class: undefined
+    });
+    expect(Object.keys(bookState.pageObjs)).toEqual(['1', '2', '3', '4']);
+    expect(Object.keys(bookState.pageDefaults)).toEqual(['1', '2', '3', '4']);
+    expect(Object.keys(bookState.pageWrap)).toEqual(['1', '2', '3', '4']);
+    expect(Object.keys(bookState.pagePlace)).toEqual(['1', '2', '3', '4']);
+    expect(Object.keys(bookState.pages)).toEqual(['1']);
+    expect(bookState.pageMv).toEqual([]);
+    expect(bookState.totalPages).toBe(4);
+    expect(bookState.page).toBe(1);
+
+    const pageState = bookState.pages[1].data();
+
+    expect(pageState.f).toBeDefined();
+    expect(pageState.f.opts).toMatchObject({
+      page: 1,
+      next: 2,
+      turn: $book,
+      duration: 600,
+      acceleration: false,
+      corners: 'forward',
+      backGradient: false,
+      frontGradient: false
+    });
+    expect(pageState.f.parent[0]).toBe(bookState.pageWrap[1][0]);
+    expect(pageState.f.wrapper).toBeDefined();
+    expect(pageState.f.fwrapper).toBeDefined();
+    expect(pageState.f.fpage).toBeDefined();
+  });
+
+  it('updates moving page state during next and previous turns', () => {
+    fixture.window.close();
+
+    const frameCallbacks = [];
+    const requestAnimationFrame = vi.fn(callback => {
+      frameCallbacks.push(callback);
+      return frameCallbacks.length;
+    });
+
+    fixture = createFixture(6, {
+      requestAnimationFrame,
+      cancelAnimationFrame: vi.fn()
+    });
+
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false,
+      duration: 32
+    });
+
+    $book.turn('next');
+
+    expect($book.turn('page')).toBe(2);
+    expect($book.turn('view')).toEqual([2, 3]);
+    expect($book.data('tpage')).toBe(2);
+    expect($book.data('pageMv')).toEqual([1]);
+
+    while (frameCallbacks.length) {
+      frameCallbacks.shift()(1000);
+    }
+
+    expect($book.data('tpage')).toBeUndefined();
+    expect($book.data('pageMv')).toEqual([]);
+
+    $book.turn('previous');
+
+    expect($book.turn('page')).toBe(1);
+    expect($book.turn('view')).toEqual([0, 1]);
+    expect($book.data('tpage')).toBe(1);
+    expect($book.data('pageMv')).toEqual([2]);
+
+    while (frameCallbacks.length) {
+      frameCallbacks.shift()(2000);
+    }
+
+    expect($book.data('tpage')).toBeUndefined();
+    expect($book.data('pageMv')).toEqual([]);
   });
 
   it('can add and remove pages dynamically', () => {

@@ -191,6 +191,19 @@ var has3d,
 		return Object.prototype.hasOwnProperty.call(object, property);
 	},
 
+	// Internal book state stored on the root element with $.data().
+	// This helper keeps direct $.data() reads easy to identify.
+
+	turnData = function(book) {
+		return book.data();
+	},
+
+	// Internal flip state stored on each active page with $.data('f').
+
+	flipData = function(page) {
+		return page.data().f;
+	},
+
 	// Gets the CSS3 vendor prefix
 
 	getPrefix = function() {
@@ -237,19 +250,23 @@ turnMethods = {
 			vendor = getPrefix();
 		}
 
-		var i, data = this.data(), ch = this.children();
+		var i, data = turnData(this), ch = this.children();
 	
 		opts = $.extend({width: this.width(), height: this.height()}, turnOptions, opts);
+		// Book state: options, original DOM attributes and page indexes.
 		data.turnOriginal = {
 			style: this.attr('style'),
 			'class': this.attr('class')
 		};
 		data.opts = opts;
+		// Source page nodes and their original attributes for destroy().
 		data.pageObjs = {};
 		data.pageDefaults = {};
+		// Active flip instances, page wrappers and current DOM placement.
 		data.pages = {};
 		data.pageWrap = {};
 		data.pagePlace = {};
+		// Moving pages; tpage is created later while a turn is pending.
 		data.pageMv = [];
 		data.totalPages = opts.pages || 0;
 
@@ -310,7 +327,7 @@ turnMethods = {
 	destroy: function() {
 
 		var page, original,
-			data = this.data();
+			data = turnData(this);
 
 		if (!data.opts)
 			return this;
@@ -364,7 +381,7 @@ turnMethods = {
 
 	_destroyPage: function(page) {
 
-		var data = this.data(),
+		var data = turnData(this),
 			pageObj = data.pageObjs[page],
 			pageData,
 			flipData,
@@ -415,7 +432,7 @@ turnMethods = {
 	addPage: function(element, page) {
 
 		var incPages = false,
-			data = this.data(),
+			data = turnData(this),
 			lastPage = data.totalPages+1;
 
 		if (page) {
@@ -529,7 +546,7 @@ turnMethods = {
 
 	_makeFlip: function(page) {
 
-		var data = this.data();
+		var data = turnData(this);
 
 		if (!data.pages[page] && data.pagePlace[page]==page) {
 
@@ -1336,7 +1353,7 @@ flipMethods = {
 
 	options: function(opts) {
 		
-		var data = this.data().f;
+		var data = flipData(this);
 
 		if (opts) {
 			flipMethods.setData.call(this, {opts: $.extend({}, data.opts || flipOptions, opts) });
@@ -1348,7 +1365,7 @@ flipMethods = {
 
 	z: function(z) {
 
-		var data = this.data().f;
+		var data = flipData(this);
 		data.opts['z-index'] = z;
 		data.fwrapper.css({'z-index': z || parseInt(data.parent.css('z-index'), 10) || 0});
 
@@ -1357,7 +1374,8 @@ flipMethods = {
 
 	_cAllowed: function() {
 
-		return corners[this.data().f.opts.corners] || this.data().f.opts.corners;
+		var data = flipData(this);
+		return corners[data.opts.corners] || data.opts.corners;
 
 	},
 
@@ -1368,7 +1386,7 @@ flipMethods = {
 
 		e = (isTouch) ? e.originalEvent.touches : [e];
 
-		var data = this.data().f,
+		var data = flipData(this),
 			pos = data.parent.offset(),
 			width = this.width(),
 			height = this.height(),
