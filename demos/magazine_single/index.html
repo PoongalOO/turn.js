@@ -1,62 +1,153 @@
 <!doctype html>
-<html>
+<html lang="fr">
 <head>
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-<script type="text/javascript" src="../../turn.min.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>turn.js - demo magazine simple page</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, sans-serif;
+      background: #d9dde4;
+      color: #202734;
+    }
 
-<style type="text/css">
-body{
-	background:#ccc;
-}
-#magazine{
-	width:576px;
-	height:752px;
-}
-#magazine .turn-page{
-	background-color:#ccc;
-	background-size:100% 100%;
-}
-</style>
+    main {
+      min-height: 100vh;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      padding: 28px;
+      box-sizing: border-box;
+    }
+
+    .magazine-frame {
+      width: min(576px, calc(100vw - 56px));
+      aspect-ratio: 576 / 752;
+    }
+
+    #magazine {
+      width: 100%;
+      height: 100%;
+      background: #b8c0cc;
+    }
+
+    #magazine .page {
+      background-color: #ccc;
+      background-position: center;
+      background-size: 100% 100%;
+      overflow: hidden;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      font-size: 15px;
+    }
+
+    button {
+      min-width: 96px;
+      min-height: 38px;
+      border: 1px solid #8e99aa;
+      border-radius: 6px;
+      background: #fff;
+      color: #202734;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #f5f7fa;
+    }
+
+    #status {
+      min-width: 92px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
+  <main>
+    <div class="magazine-frame">
+      <div id="magazine">
+        <div class="page" style="background-image:url(pages/01.jpg);"></div>
+        <div class="page" style="background-image:url(pages/02.jpg);"></div>
+        <div class="page" style="background-image:url(pages/03.jpg);"></div>
+        <div class="page" style="background-image:url(pages/04.jpg);"></div>
+        <div class="page" style="background-image:url(pages/05.jpg);"></div>
+        <div class="page" style="background-image:url(pages/06.jpg);"></div>
+      </div>
+    </div>
 
-<div id="magazine">
-	<div style="background-image:url(pages/01.jpg);"></div>
-	<div style="background-image:url(pages/02.jpg);"></div>
-	<div style="background-image:url(pages/03.jpg);"></div>
-	<div style="background-image:url(pages/04.jpg);"></div>
-	<div style="background-image:url(pages/05.jpg);"></div>
-	<div style="background-image:url(pages/06.jpg);"></div>
-</div>
+    <div class="controls">
+      <button type="button" id="previous">Previous</button>
+      <span id="status">Page 1</span>
+      <button type="button" id="next">Next</button>
+    </div>
+  </main>
 
+  <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+  <script src="../../turn.js"></script>
+  <script>
+    $(function() {
+      var $magazine = $('#magazine');
+      var $frame = $('.magazine-frame');
+      var $status = $('#status');
 
-<script type="text/javascript">
+      function currentMagazineSize() {
+        var width = Math.floor($frame.width());
+        return {
+          width: width,
+          height: Math.round(width * 752 / 576)
+        };
+      }
 
-	$(window).ready(function() {
-		$('#magazine').turn({
-							display: 'single',
-							acceleration: true,
-							gradients: !$.isTouch,
-							elevation:50,
-							when: {
-								turned: function(e, page) {
-									/*console.log('Current view: ', $(this).turn('view'));*/
-								}
-							}
-						});
-	});
-	
-	
-	$(window).bind('keydown', function(e){
-		
-		if (e.keyCode==37)
-			$('#magazine').turn('previous');
-		else if (e.keyCode==39)
-			$('#magazine').turn('next');
-			
-	});
+      function syncMagazineSize() {
+        var size = currentMagazineSize();
+        $frame.css('height', size.height);
+        $magazine.turn('size', size.width, size.height);
+      }
 
-</script>
+      function updateStatus() {
+        $status.text('Page ' + $magazine.turn('page') + ' / ' + $magazine.turn('pages'));
+      }
 
+      var initialSize = currentMagazineSize();
+      $frame.css('height', initialSize.height);
+
+      $magazine.turn({
+        width: initialSize.width,
+        height: initialSize.height,
+        display: 'single',
+        acceleration: true,
+        gradients: true,
+        elevation: 50,
+        when: {
+          turned: updateStatus
+        }
+      });
+
+      $('#previous').on('click', function() {
+        $magazine.turn('previous');
+      });
+
+      $('#next').on('click', function() {
+        $magazine.turn('next');
+      });
+
+      $(document).on('keydown.turnDemo', function(event) {
+        if (event.key === 'ArrowLeft') $magazine.turn('previous');
+        if (event.key === 'ArrowRight') $magazine.turn('next');
+      });
+
+      $(window).on('resize.turnDemo', syncMagazineSize);
+
+      updateStatus();
+    });
+  </script>
 </body>
 </html>
