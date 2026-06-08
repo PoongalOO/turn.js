@@ -24,43 +24,61 @@
       box-sizing: border-box;
     }
 
+    .book-frame {
+      width: min(720px, calc(100vw - 56px));
+      aspect-ratio: 72 / 46;
+    }
+
     #book {
-      width: 720px;
-      height: 460px;
+      width: 100%;
+      height: 100%;
       background: #cbd3df;
     }
 
     #book .page {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      width: 360px;
-      height: 460px;
-      box-sizing: border-box;
-      padding: 28px;
-      border: 1px solid #aeb8c8;
       background: #fff8df;
-      font-size: 18px;
-      line-height: 1.2;
+      overflow: hidden;
     }
 
-    #book .page:nth-child(even) {
+    #book .page.alt {
       background: #e7f1ff;
     }
 
-    #book .page h1,
-    #book .page h2 {
+    #book .page-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+      padding: 28px;
+      border: 1px solid #aeb8c8;
+      font-size: 18px;
+      line-height: 1.2;
+      overflow: hidden;
+    }
+
+    #book .page.alt .page-content {
+      background: #e7f1ff;
+    }
+
+    #book .page:not(.alt) .page-content {
+      background: #fff8df;
+    }
+
+    #book .page-content h1,
+    #book .page-content h2 {
       margin: 0;
       font-size: 30px;
       line-height: 1.05;
     }
 
-    #book .page p {
+    #book .page-content p {
       margin: 0;
       line-height: 1.45;
     }
 
-    #book .page img {
+    #book .page-content img {
       display: block;
       width: 100%;
       height: 180px;
@@ -104,53 +122,76 @@
       text-align: center;
     }
 
-    @media (max-width: 820px) {
-      #book {
-        width: 92vw;
-        height: 58vw;
-        max-height: 460px;
+    @media (max-width: 620px) {
+      #book .page-content {
+        gap: 12px;
+        padding: 20px;
+        font-size: 15px;
+      }
+
+      #book .page-content h1,
+      #book .page-content h2 {
+        font-size: 24px;
+      }
+
+      #book .page-content img {
+        height: 130px;
       }
     }
   </style>
 </head>
 <body>
   <main>
-    <div id="book">
-      <div class="page">
-        <span class="kicker">Demo minimale</span>
-        <h1>Explorer turn.js</h1>
-        <img src="assets/cover.svg" alt="Livre ouvert avec pages colorees">
-        <p>Un exemple autonome pour verifier rapidement le chargement de jQuery 4, l'initialisation du plugin et le changement de page.</p>
-      </div>
-      <div class="page">
-        <span class="kicker">Page 2</span>
-        <h2>Un livre HTML</h2>
-        <p>Chaque page est un simple element HTML. Le plugin ajoute les wrappers, gere les vues et anime le passage d'une page a l'autre.</p>
-        <img src="assets/layout.svg" alt="Composition de pages dans un navigateur">
-      </div>
-      <div class="page">
-        <span class="kicker">Page 3</span>
-        <h2>Images et texte</h2>
-        <img src="assets/media.svg" alt="Image abstraite avec cadres de contenu">
-        <p>La demo contient du texte et des images locales afin de tester un rendu un peu plus proche d'un cas reel.</p>
-      </div>
-      <div class="page">
-        <span class="kicker">Page 4</span>
-        <h2>Navigation</h2>
-        <p>Utilise les boutons, les fleches du clavier ou le coin de page pour changer de vue.</p>
-        <img src="assets/navigation.svg" alt="Fleches de navigation autour d'un livre">
-      </div>
-      <div class="page">
-        <span class="kicker">Page 5</span>
-        <h2>Compatibilite</h2>
-        <img src="assets/browser.svg" alt="Fenetre de navigateur avec indicateurs de compatibilite">
-        <p>Cette page charge jQuery 4.0.0 depuis le CDN officiel et la version locale de turn.js depuis le depot clone.</p>
-      </div>
-      <div class="page">
-        <span class="kicker">Page 6</span>
-        <h2>Fin du test</h2>
-        <p>Si cette derniere page s'affiche et que le retour fonctionne, le scenario minimal est operationnel.</p>
-        <img src="assets/finish.svg" alt="Marque de validation sur une page">
+    <div class="book-frame">
+      <div id="book">
+        <div class="page">
+          <div class="page-content">
+            <span class="kicker">Demo minimale</span>
+            <h1>Explorer turn.js</h1>
+            <img src="assets/cover.svg" alt="Livre ouvert avec pages colorees">
+            <p>Un exemple autonome pour verifier rapidement le chargement de jQuery 4, l'initialisation du plugin et le changement de page.</p>
+          </div>
+        </div>
+        <div class="page alt">
+          <div class="page-content">
+            <span class="kicker">Page 2</span>
+            <h2>Un livre HTML</h2>
+            <p>Chaque page est un simple element HTML. Le plugin ajoute les wrappers, gere les vues et anime le passage d'une page a l'autre.</p>
+            <img src="assets/layout.svg" alt="Composition de pages dans un navigateur">
+          </div>
+        </div>
+        <div class="page">
+          <div class="page-content">
+            <span class="kicker">Page 3</span>
+            <h2>Images et texte</h2>
+            <img src="assets/media.svg" alt="Image abstraite avec cadres de contenu">
+            <p>La demo contient du texte et des images locales afin de tester un rendu un peu plus proche d'un cas reel.</p>
+          </div>
+        </div>
+        <div class="page alt">
+          <div class="page-content">
+            <span class="kicker">Page 4</span>
+            <h2>Navigation</h2>
+            <p>Utilise les boutons, les fleches du clavier ou le coin de page pour changer de vue.</p>
+            <img src="assets/navigation.svg" alt="Fleches de navigation autour d'un livre">
+          </div>
+        </div>
+        <div class="page">
+          <div class="page-content">
+            <span class="kicker">Page 5</span>
+            <h2>Compatibilite</h2>
+            <img src="assets/browser.svg" alt="Fenetre de navigateur avec indicateurs de compatibilite">
+            <p>Cette page charge jQuery 4.0.0 depuis le CDN officiel et la version locale de turn.js depuis le depot clone.</p>
+          </div>
+        </div>
+        <div class="page alt">
+          <div class="page-content">
+            <span class="kicker">Page 6</span>
+            <h2>Fin du test</h2>
+            <p>Si cette derniere page s'affiche et que le retour fonctionne, le scenario minimal est operationnel.</p>
+            <img src="assets/finish.svg" alt="Marque de validation sur une page">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -166,15 +207,34 @@
   <script>
     $(function() {
       var $book = $('#book');
+      var $frame = $('.book-frame');
       var $status = $('#status');
+
+      function currentBookSize() {
+        var width = Math.floor($frame.width());
+        if (width % 2) width -= 1;
+        return {
+          width: width,
+          height: Math.round(width * 460 / 720)
+        };
+      }
+
+      function syncBookSize() {
+        var size = currentBookSize();
+        $frame.css('height', size.height);
+        $book.turn('size', size.width, size.height);
+      }
 
       function updateStatus() {
         $status.text('Page ' + $book.turn('page') + ' / ' + $book.turn('pages'));
       }
 
+      var initialSize = currentBookSize();
+      $frame.css('height', initialSize.height);
+
       $book.turn({
-        width: 720,
-        height: 460,
+        width: initialSize.width,
+        height: initialSize.height,
         display: 'double',
         gradients: true,
         acceleration: true,
@@ -195,6 +255,8 @@
         if (event.key === 'ArrowLeft') $book.turn('previous');
         if (event.key === 'ArrowRight') $book.turn('next');
       });
+
+      $(window).on('resize.turnDemo', syncBookSize);
 
       updateStatus();
     });
