@@ -248,8 +248,13 @@ turnMethods = {
 		var i, data = this.data(), ch = this.children();
 	
 		opts = $.extend({width: this.width(), height: this.height()}, turnOptions, opts);
+		data.turnOriginal = {
+			style: this.attr('style'),
+			'class': this.attr('class')
+		};
 		data.opts = opts;
 		data.pageObjs = {};
+		data.pageDefaults = {};
 		data.pages = {};
 		data.pageWrap = {};
 		data.pagePlace = {};
@@ -279,27 +284,138 @@ turnMethods = {
 
 		// Event listeners
 
-		$(this).on(events.start + turnEventNamespace, function(e) {
-			for (var page in data.pages)
-				if (has(page, data.pages) && flipMethods._eventStart.call(data.pages[page], e)===false)
-					return false;
-		});
-			
-		$(document).on(events.move + turnEventNamespace, function(e) {
-			for (var page in data.pages)
-				if (has(page, data.pages))
-					flipMethods._eventMove.call(data.pages[page], e);
-		}).
-		on(events.end + turnEventNamespace, function(e) {
-			for (var page in data.pages)
-				if (has(page, data.pages))
-					flipMethods._eventEnd.call(data.pages[page], e);
+		data.eventHandlers = {
+			start: function(e) {
+				for (var page in data.pages)
+					if (has(page, data.pages) && flipMethods._eventStart.call(data.pages[page], e)===false)
+						return false;
+			},
+			move: function(e) {
+				for (var page in data.pages)
+					if (has(page, data.pages))
+						flipMethods._eventMove.call(data.pages[page], e);
+			},
+			end: function(e) {
+				for (var page in data.pages)
+					if (has(page, data.pages))
+						flipMethods._eventEnd.call(data.pages[page], e);
 
-		});
+			}
+		};
+
+		$(this).on(events.start + turnEventNamespace, data.eventHandlers.start);
+			
+		$(document).on(events.move + turnEventNamespace, data.eventHandlers.move).
+			on(events.end + turnEventNamespace, data.eventHandlers.end);
 
 		data.done = true;
 
 		return this;
+	},
+
+	// Removes turn.js behavior and restores the original page elements
+
+	destroy: function() {
+
+		var page, original,
+			data = this.data();
+
+		if (!data.opts)
+			return this;
+
+		if (data.done)
+			this.turn('stop');
+
+		this.off(turnEventNamespace);
+
+		if (data.eventHandlers) {
+			this.off(events.start + turnEventNamespace, data.eventHandlers.start);
+			$(document).
+				off(events.move + turnEventNamespace, data.eventHandlers.move).
+				off(events.end + turnEventNamespace, data.eventHandlers.end);
+		}
+
+		for (page in data.pageObjs) {
+			if (!has(page, data.pageObjs) || page==='0' || !data.pageObjs[page]) continue;
+			turnMethods._destroyPage.call(this, page);
+			this.append(data.pageObjs[page]);
+		}
+
+		if (data.pageObjs[0])
+			turnMethods._destroyPage.call(this, 0);
+
+		if (data.fparent)
+			data.fparent.remove();
+
+		original = data.turnOriginal || {};
+
+		if (original.style===undefined)
+			this.removeAttr('style');
+		else
+			this.attr('style', original.style);
+
+		if (original['class']===undefined)
+			this.removeAttr('class');
+		else
+			this.attr('class', original['class']);
+
+		$.each(['opts', 'turnOriginal', 'pageDefaults', 'pages', 'pageObjs', 'pageWrap',
+				'pagePlace', 'pageMv', 'totalPages', 'page', 'tpage', 'disabled',
+				'done', 'display', 'fparent', 'eventHandlers'], function(i, key) {
+			this.removeData(key);
+		}.bind(this));
+
+		return this;
+	},
+
+	// Restores one page element and removes flip wrappers/state
+
+	_destroyPage: function(page) {
+
+		var data = this.data(),
+			pageObj = data.pageObjs[page],
+			pageData,
+			flipData,
+			original = data.pageDefaults && data.pageDefaults[page];
+
+		if (!pageObj)
+			return;
+
+		pageData = pageObj.data();
+		flipData = pageData && pageData.f;
+
+		pageObj.off(turnFlipEventNamespace).animatef(false);
+		pageObj.detach();
+
+		if (flipData) {
+			if (flipData.fwrapper)
+				flipData.fwrapper.remove();
+			if (flipData.wrapper)
+				flipData.wrapper.remove();
+		}
+
+		if (data.pageWrap[page])
+			data.pageWrap[page].remove();
+
+		if (original) {
+			if (original.style===undefined)
+				pageObj.removeAttr('style');
+			else
+				pageObj.attr('style', original.style);
+
+			if (original['class']===undefined)
+				pageObj.removeAttr('class');
+			else
+				pageObj.attr('class', original['class']);
+		} else {
+			pageObj.removeClass('turn-page p' + page + ' p-temporal');
+		}
+
+		pageObj.removeData('f').removeData('effect');
+
+		delete data.pages[page];
+		delete data.pageWrap[page];
+		delete data.pagePlace[page];
 	},
 
 	// Adds a page from external data
@@ -336,7 +452,12 @@ turnMethods = {
 				data.totalPages = lastPage;
 
 			// Add element
-			data.pageObjs[page] = $(element).addClass('turn-page p' + page);
+			data.pageObjs[page] = $(element);
+			data.pageDefaults[page] = {
+				style: data.pageObjs[page].attr('style'),
+				'class': data.pageObjs[page].attr('class')
+			};
+			data.pageObjs[page].addClass('turn-page p' + page);
 
 			// Add page
 			turnMethods._addPage.call(this, page);
@@ -1926,6 +2047,8 @@ $.extend($.fn, {
 			this.data(data);
 			f();
 		} else {
+			if (data.effect && data.effect.handle)
+				clearInterval(data.effect.handle);
 			delete data['effect'];
 		}
 	}
