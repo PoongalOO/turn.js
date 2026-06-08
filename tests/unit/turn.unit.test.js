@@ -220,6 +220,16 @@ describe('turn.js jQuery plugin', () => {
     expect(complete).not.toHaveBeenCalled();
   });
 
+  it('writes modern CSS transform properties', () => {
+    const { $ } = fixture;
+    const element = $('<div></div>')[0];
+
+    $(element).transform('translate(12px, 24px)', '10% 20%');
+
+    expect(element.style.transform).toBe('translate(12px, 24px)');
+    expect(element.style.transformOrigin).toBe('10% 20%');
+  });
+
   it('registers internal handlers with event namespaces', () => {
     fixture.window.close();
     fixture = createFixture();

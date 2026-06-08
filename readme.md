@@ -27,6 +27,10 @@ Compatibility is not yet guaranteed for every modern browser or device. Safari/W
   - removes turn.js internal jQuery data while preserving unrelated user data.
 - Replaced the internal `setInterval` animation loop with `requestAnimationFrame`.
 - Fixed `animatef(false)` so cancelling an animation cancels the scheduled animation frame.
+- Modernized CSS output:
+  - gradients now use standard `linear-gradient(...deg, ...)`;
+  - fold gradients keep normalized `0-100%` stops and use softer shadow-only colors;
+  - transforms now write standard `transform` and `transform-origin` properties, with a prefixed fallback when detected.
 - Added a minimal browser demo using jQuery `4.0.0`.
 - Added text and local images to the minimal demo.
 - Fixed minimal demo layout so turn.js page measurements match the real rendered page size.
@@ -169,6 +173,8 @@ The current suite covers:
 - event namespace registration;
 - `destroy` cleanup and re-initialization;
 - `requestAnimationFrame` scheduling and cancellation in `animatef`;
+- standard CSS transform property writing;
+- bounded, shadow-only fold gradients during animation;
 - minimal demo rendering;
 - page turn rendering;
 - compact viewport geometry;

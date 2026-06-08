@@ -209,41 +209,19 @@ var has3d,
 
 	gradient = function(obj, p0, p1, colors, numColors) {
 	
-		var j, cols = [];
+		var j, cols = [],
+			dx = p1.x-p0.x,
+			dy = p1.y-p0.y,
+			angle = Math.atan2(dy, dx),
+			stop;
 
-		if (vendor=='-webkit-') {
-		
-			for (j = 0; j<numColors; j++)
-					cols.push('color-stop('+colors[j][0]+', '+colors[j][1]+')');
-			
-			obj.css({'background-image': '-webkit-gradient(linear, '+p0.x+'% '+p0.y+'%,  '+p1.x+'% '+p1.y+'%, '+ cols.join(',') +' )'});
-
-		} else {
-
-			// This procedure makes the gradients for non-webkit browsers
-			// It will be reduced to one unique way for gradients in next versions
-			
-			p0 = {x:p0.x/100 * obj.width(), y:p0.y/100 * obj.height()};
-			p1 = {x:p1.x/100 * obj.width(), y:p1.y/100 * obj.height()};
-
-			var dx = p1.x-p0.x,
-				dy = p1.y-p0.y,
-				angle = Math.atan2(dy, dx),
-				angle2 = angle - Math.PI/2,
-				diagonal = Math.abs(obj.width()*Math.sin(angle2)) + Math.abs(obj.height()*Math.cos(angle2)),
-				gradientDiagonal = Math.sqrt(dy*dy + dx*dx),
-				corner = point2D((p1.x<p0.x) ? obj.width() : 0, (p1.y<p0.y) ? obj.height() : 0),
-				slope = Math.tan(angle),
-				inverse = -1/slope,
-				x = (inverse*corner.x - corner.y - slope*p0.x + p0.y) / (inverse-slope),
-				c = {x: x, y: inverse*x - inverse*corner.x + corner.y},
-				segA = (Math.sqrt( Math.pow(c.x-p0.x,2) + Math.pow(c.y-p0.y,2)));
-
-				for (j = 0; j<numColors; j++)
-					cols.push(' '+colors[j][1]+' '+(( segA + gradientDiagonal*colors[j][0] )*100/diagonal)+'%');
-		
-				obj.css({'background-image': vendor+'linear-gradient(' + (-angle) + 'rad,' + cols.join(',') + ')'});
+		for (j = 0; j<numColors; j++) {
+			stop = Math.max(0, Math.min(1, colors[j][0])) * 100;
+			cols.push(' '+colors[j][1]+' '+stop+'%');
 		}
+
+		var backgroundImage = 'linear-gradient(' + (-deg(angle)) + 'deg,' + cols.join(',') + ')';
+		obj.css({'background-image': backgroundImage});
 	},
 
 turnMethods = {
@@ -1686,8 +1664,8 @@ flipMethods = {
 							point2D(left?100:0, top?100:0),
 							point2D(gradientEndPointA.x, gradientEndPointA.y),
 							[[gradientStartV, 'rgba(0,0,0,0)'],
-							[((1-gradientStartV)*0.8)+gradientStartV, 'rgba(0,0,0,'+(0.2*gradientOpacity)+')'],
-							[1, 'rgba(255,255,255,'+(0.2*gradientOpacity)+')']],
+							[((1-gradientStartV)*0.9)+gradientStartV, 'rgba(0,0,0,'+(0.12*gradientOpacity)+')'],
+							[1, 'rgba(0,0,0,0)']],
 							3,
 							alpha);
 		
@@ -1695,8 +1673,8 @@ flipMethods = {
 					gradient(data.bshadow,
 							point2D(left?0:100, top?0:100),
 							point2D(gradientEndPointB.x, gradientEndPointB.y),
-							[[0.8, 'rgba(0,0,0,0)'],
-							[1, 'rgba(0,0,0,'+(0.3*gradientOpacity)+')'],
+							[[0.7, 'rgba(0,0,0,0)'],
+							[0.9, 'rgba(0,0,0,'+(0.18*gradientOpacity)+')'],
 							[1, 'rgba(0,0,0,0)']],
 							3);
 				
@@ -2008,10 +1986,15 @@ $.extend($.fn, {
 
 		var properties = {};
 		
-		if (origin)
-			properties[vendor+'transform-origin'] = origin;
+		if (origin) {
+			if (vendor)
+				properties[vendor+'transform-origin'] = origin;
+			properties['transform-origin'] = origin;
+		}
 		
-		properties[vendor+'transform'] = transform;
+		if (vendor)
+			properties[vendor+'transform'] = transform;
+		properties.transform = transform;
 	
 		return this.css(properties);
 

@@ -27,6 +27,10 @@ La compatibilité avec tous les navigateurs et appareils modernes n'est pas enco
   - supprime les données jQuery internes de turn.js sans effacer les données utilisateur sans lien.
 - Remplacement de la boucle d'animation interne `setInterval` par `requestAnimationFrame`.
 - Correction de `animatef(false)` pour que l'annulation d'une animation annule bien la frame planifiée.
+- Modernisation des sorties CSS :
+  - les gradients utilisent maintenant la syntaxe standard `linear-gradient(...deg, ...)` ;
+  - les gradients de pli conservent des stops normalisés entre `0` et `100%` avec des ombres plus douces, sans highlight blanc ;
+  - les transforms écrivent maintenant les propriétés standard `transform` et `transform-origin`, avec fallback préfixé quand il est détecté.
 - Ajout d'une démo navigateur minimale avec jQuery `4.0.0`.
 - Ajout de texte et d'images locales dans la démo minimale.
 - Correction de la mise en page de la démo minimale afin que les dimensions mesurées par turn.js correspondent à la taille réellement rendue des pages.
@@ -169,6 +173,8 @@ La suite actuelle couvre :
 - l'enregistrement des namespaces d'événements ;
 - le nettoyage `destroy` et la réinitialisation ;
 - la planification et l'annulation `requestAnimationFrame` dans `animatef` ;
+- l'écriture des propriétés CSS standard pour les transforms ;
+- les gradients de pli bornés et uniquement ombrés pendant l'animation ;
 - le rendu de la démo minimale ;
 - le rendu après page tournée ;
 - la géométrie en viewport compact ;
