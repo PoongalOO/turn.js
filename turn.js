@@ -218,6 +218,127 @@ var has3d,
 		return vendor;
 	},
 
+	// Calculates the fold geometry without touching the DOM
+
+	calculateFoldGeometry = function(opts) {
+
+		var alpha = 0,
+			angle = 0,
+			px,
+			gradientEndPointA,
+			gradientEndPointB,
+			gradientStartV,
+			gradientSize,
+			gradientOpacity,
+			mv = point2D(0, 0),
+			df = point2D(0, 0),
+			tr = point2D(0, 0),
+			width = opts.width,
+			height = opts.height,
+			h = opts.wrapperHeight,
+			o = opts.origin,
+			point = point2D(opts.point.x, opts.point.y),
+			top = opts.point.corner.substr(0, 1) == 't',
+			left = opts.point.corner.substr(1, 1) == 'l';
+
+		point.corner = opts.point.corner;
+
+		if (left)
+			point.x = Math.max(point.x, 1);
+		else
+			point.x = Math.min(point.x, width-1);
+
+		var compute = function() {
+			var rel = point2D((o.x) ? o.x - point.x : point.x, (o.y) ? o.y - point.y : point.y),
+				tan = (Math.atan2(rel.y, rel.x)),
+				middle;
+
+			alpha = A90 - tan;
+			angle = deg(alpha);
+			middle = point2D((left) ? width - rel.x/2 : point.x + rel.x/2, rel.y/2);
+
+			var gamma = alpha - Math.atan2(middle.y, middle.x),
+				distance =  Math.max(0, Math.sin(gamma) * Math.sqrt(Math.pow(middle.x, 2) + Math.pow(middle.y, 2)));
+
+			tr = point2D(distance * Math.sin(alpha), distance * Math.cos(alpha));
+
+			if (alpha > A90) {
+			
+				tr.x = tr.x + Math.abs(tr.y * Math.tan(tan));
+				tr.y = 0;
+
+				if (Math.round(tr.x*Math.tan(PI-alpha)) < height) {
+
+					point.y = Math.sqrt(Math.pow(height, 2)+2 * middle.x * rel.x);
+					if (top) point.y =  height - point.y;
+					return compute();
+
+				}
+			}
+	
+			if (alpha>A90) {
+				var beta = PI-alpha, dd = h - height/Math.sin(beta);
+				mv = point2D(Math.round(dd*Math.cos(beta)), Math.round(dd*Math.sin(beta)));
+				if (left) mv.x = - mv.x;
+				if (top) mv.y = - mv.y;
+			}
+
+			px = Math.round(tr.y/Math.tan(alpha) + tr.x);
+		
+			var side = width - px,
+				sideX = side*Math.cos(alpha*2),
+				sideY = side*Math.sin(alpha*2);
+				df = point2D(Math.round( (left ? side -sideX : px+sideX)), Math.round((top) ? sideY : height - sideY));
+
+			gradientSize = side*Math.sin(alpha);
+			var far = Math.sqrt(Math.pow(opts.endingPoint.x-point.x, 2)+Math.pow(opts.endingPoint.y-point.y, 2));
+
+			gradientOpacity = (far<width) ? far/width : 1;
+
+			if (opts.frontGradient) {
+
+				gradientStartV = gradientSize>100 ? (gradientSize-100)/gradientSize : 0;
+				gradientEndPointA = point2D(gradientSize*Math.sin(A90-alpha)/height*100, gradientSize*Math.cos(A90-alpha)/width*100);
+			
+				if (top) gradientEndPointA.y = 100-gradientEndPointA.y;
+				if (left) gradientEndPointA.x = 100-gradientEndPointA.x;
+			}
+
+			if (opts.backGradient) {
+
+				gradientEndPointB = point2D(gradientSize*Math.sin(alpha)/width*100, gradientSize*Math.cos(alpha)/height*100);
+				if (!left) gradientEndPointB.x = 100-gradientEndPointB.x;
+				if (!top) gradientEndPointB.y = 100-gradientEndPointB.y;
+			}
+
+			tr.x = Math.round(tr.x);
+			tr.y = Math.round(tr.y);
+
+			return true;
+		};
+
+		compute();
+
+		return {
+			point: point,
+			alpha: alpha,
+			angle: angle,
+			tr: tr,
+			move: mv,
+			df: df,
+			px: px,
+			top: top,
+			left: left,
+			gradient: {
+				endPointA: gradientEndPointA,
+				endPointB: gradientEndPointB,
+				startV: gradientStartV,
+				size: gradientSize,
+				opacity: gradientOpacity
+			}
+		};
+	},
+
 	// Adds gradients
 
 	gradient = function(obj, p0, p1, colors, numColors) {
@@ -1593,12 +1714,9 @@ flipMethods = {
 		var that = this,
 			a = 0,
 			alpha = 0,
-			beta,
-			px,
 			gradientEndPointA,
 			gradientEndPointB,
 			gradientStartV,
-			gradientSize,
 			gradientOpacity,
 			mv = point2D(0, 0),
 			df = point2D(0, 0),
@@ -1606,88 +1724,23 @@ flipMethods = {
 			width = this.width(),
 			height = this.height(),
 			folding = flipMethods._foldingPage.call(this),
-			tan = Math.tan(alpha),
 			data = this.data().f,
 			ac = data.opts.acceleration,
 			h = data.wrapper.height(),
 			o = flipMethods._c.call(this, point.corner),
+			backGradient = flipMethods._backGradient.call(this),
+			geometry = calculateFoldGeometry({
+				point: point,
+				width: width,
+				height: height,
+				wrapperHeight: h,
+				origin: o,
+				endingPoint: flipMethods._c2.call(this, point.corner),
+				frontGradient: data.opts.frontGradient,
+				backGradient: backGradient
+			}),
 			top = point.corner.substr(0, 1) == 't',
 			left = point.corner.substr(1, 1) == 'l',
-
-			compute = function() {
-				var rel = point2D((o.x) ? o.x - point.x : point.x, (o.y) ? o.y - point.y : point.y),
-					tan = (Math.atan2(rel.y, rel.x)),
-					middle;
-
-				alpha = A90 - tan;
-				a = deg(alpha);
-				middle = point2D((left) ? width - rel.x/2 : point.x + rel.x/2, rel.y/2);
-
-				var gamma = alpha - Math.atan2(middle.y, middle.x),
-					distance =  Math.max(0, Math.sin(gamma) * Math.sqrt(Math.pow(middle.x, 2) + Math.pow(middle.y, 2)));
-
-					tr = point2D(distance * Math.sin(alpha), distance * Math.cos(alpha));
-
-					if (alpha > A90) {
-					
-						tr.x = tr.x + Math.abs(tr.y * Math.tan(tan));
-						tr.y = 0;
-
-						if (Math.round(tr.x*Math.tan(PI-alpha)) < height) {
-
-							point.y = Math.sqrt(Math.pow(height, 2)+2 * middle.x * rel.x);
-							if (top) point.y =  height - point.y;
-							return compute();
-
-						}
-					}
-			
-				if (alpha>A90) {
-					var beta = PI-alpha, dd = h - height/Math.sin(beta);
-					mv = point2D(Math.round(dd*Math.cos(beta)), Math.round(dd*Math.sin(beta)));
-					if (left) mv.x = - mv.x;
-					if (top) mv.y = - mv.y;
-				}
-
-				px = Math.round(tr.y/Math.tan(alpha) + tr.x);
-			
-				var side = width - px,
-					sideX = side*Math.cos(alpha*2),
-					sideY = side*Math.sin(alpha*2);
-					df = point2D(Math.round( (left ? side -sideX : px+sideX)), Math.round((top) ? sideY : height - sideY));
-					
-				
-				// GRADIENTS
-
-					gradientSize = side*Math.sin(alpha);
-						var endingPoint = flipMethods._c2.call(that, point.corner),
-						far = Math.sqrt(Math.pow(endingPoint.x-point.x, 2)+Math.pow(endingPoint.y-point.y, 2));
-
-					gradientOpacity = (far<width) ? far/width : 1;
-
-
-				if (data.opts.frontGradient) {
-
-					gradientStartV = gradientSize>100 ? (gradientSize-100)/gradientSize : 0;
-					gradientEndPointA = point2D(gradientSize*Math.sin(A90-alpha)/height*100, gradientSize*Math.cos(A90-alpha)/width*100);
-				
-					if (top) gradientEndPointA.y = 100-gradientEndPointA.y;
-					if (left) gradientEndPointA.x = 100-gradientEndPointA.x;
-				}
-
-				if (flipMethods._backGradient.call(that)) {
-
-					gradientEndPointB = point2D(gradientSize*Math.sin(alpha)/width*100, gradientSize*Math.cos(alpha)/height*100);
-					if (!left) gradientEndPointB.x = 100-gradientEndPointB.x;
-					if (!top) gradientEndPointB.y = 100-gradientEndPointB.y;
-				}
-				//
-
-				tr.x = Math.round(tr.x);
-				tr.y = Math.round(tr.y);
-
-				return true;
-			},
 
 			transform = function(tr, c, x, a) {
 			
@@ -1715,7 +1768,7 @@ flipMethods = {
 							3,
 							alpha);
 		
-				if (flipMethods._backGradient.call(that))
+				if (backGradient)
 					gradient(data.bshadow,
 							point2D(left?0:100, top?0:100),
 							point2D(gradientEndPointB.x, gradientEndPointB.y),
@@ -1723,34 +1776,40 @@ flipMethods = {
 							[0.9, 'rgba(0,0,0,'+(0.18*gradientOpacity)+')'],
 							[1, 'rgba(0,0,0,0)']],
 							3);
-				
+					
 			};
+
+		point.x = geometry.point.x;
+		point.y = geometry.point.y;
+		alpha = geometry.alpha;
+		a = geometry.angle;
+		tr = geometry.tr;
+		mv = geometry.move;
+		df = geometry.df;
+		top = geometry.top;
+		left = geometry.left;
+		gradientEndPointA = geometry.gradient.endPointA;
+		gradientEndPointB = geometry.gradient.endPointB;
+		gradientStartV = geometry.gradient.startV;
+		gradientOpacity = geometry.gradient.opacity;
 
 		switch (point.corner) {
 			case 'tl' :
-				point.x = Math.max(point.x, 1);
-				compute();
 				transform(tr, [1,0,0,1], [100, 0], a);
 				data.fpage.transform(translate(-height, -width, ac) + rotate(90-a*2) , '100% 100%');
 				folding.transform(rotate(90) + translate(0, -height, ac), '0% 0%');
 			break;
 			case 'tr' :
-				point.x = Math.min(point.x, width-1);
-				compute();
 				transform(point2D(-tr.x, tr.y), [0,0,0,1], [0, 0], -a);
 				data.fpage.transform(translate(0, -width, ac) + rotate(-90+a*2) , '0% 100%');
 				folding.transform(rotate(270) + translate(-width, 0, ac), '0% 0%');
 			break;
 			case 'bl' :
-				point.x = Math.max(point.x, 1);
-				compute();
 				transform(point2D(tr.x, -tr.y), [1,1,0,0], [100, 100], -a);
 				data.fpage.transform(translate(-height, 0, ac) + rotate(-90+a*2), '100% 0%');
 				folding.transform(rotate(270) + translate(-width, 0, ac), '0% 0%');
 			break;
 			case 'br' :
-				point.x = Math.min(point.x, width-1);
-				compute();
 				transform(point2D(-tr.x, -tr.y), [0,1,1,0], [0, 100], a);
 				data.fpage.transform(rotate(90-a*2), '0% 0%');
 				folding.transform(rotate(90) + translate(0, -height, ac), '0% 0%');
@@ -2103,6 +2162,9 @@ $.extend($.fn, {
 	}
 });
 
+
+if (window.__TURNJS_TEST_HOOKS__)
+	window.__TURNJS_TEST_HOOKS__.calculateFoldGeometry = calculateFoldGeometry;
 
 $.isTouch = isTouch;
 

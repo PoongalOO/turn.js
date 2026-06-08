@@ -78,6 +78,82 @@ describe('turn.js jQuery plugin', () => {
     expect($.fn.transform).toBeTypeOf('function');
   });
 
+  it('calculates fold geometry without DOM for every corner', () => {
+    fixture.window.close();
+    fixture = createFixture(4, {
+      __TURNJS_TEST_HOOKS__: {}
+    });
+
+    const calculateFoldGeometry = fixture.window.__TURNJS_TEST_HOOKS__.calculateFoldGeometry;
+    const base = {
+      width: 300,
+      height: 400,
+      wrapperHeight: 500,
+      frontGradient: true,
+      backGradient: true
+    };
+    const cases = [
+      {
+        point: { corner: 'tl', x: 90, y: 120 },
+        origin: { x: 0, y: 0 },
+        endingPoint: { x: 600, y: 0 },
+        top: true,
+        left: true
+      },
+      {
+        point: { corner: 'tr', x: 210, y: 120 },
+        origin: { x: 300, y: 0 },
+        endingPoint: { x: -300, y: 0 },
+        top: true,
+        left: false
+      },
+      {
+        point: { corner: 'bl', x: 90, y: 280 },
+        origin: { x: 0, y: 400 },
+        endingPoint: { x: 600, y: 400 },
+        top: false,
+        left: true
+      },
+      {
+        point: { corner: 'br', x: 210, y: 280 },
+        origin: { x: 300, y: 400 },
+        endingPoint: { x: -300, y: 400 },
+        top: false,
+        left: false
+      }
+    ];
+
+    expect(calculateFoldGeometry).toBeTypeOf('function');
+
+    for (const item of cases) {
+      const originalPoint = { ...item.point };
+      const geometry = calculateFoldGeometry({ ...base, ...item });
+
+      expect(item.point).toEqual(originalPoint);
+      expect(geometry.point.corner).toBe(item.point.corner);
+      expect(geometry.top).toBe(item.top);
+      expect(geometry.left).toBe(item.left);
+      expect(Number.isFinite(geometry.alpha)).toBe(true);
+      expect(Number.isFinite(geometry.angle)).toBe(true);
+      expect(Number.isFinite(geometry.px)).toBe(true);
+      expect(Number.isFinite(geometry.tr.x)).toBe(true);
+      expect(Number.isFinite(geometry.tr.y)).toBe(true);
+      expect(Number.isFinite(geometry.move.x)).toBe(true);
+      expect(Number.isFinite(geometry.move.y)).toBe(true);
+      expect(Number.isFinite(geometry.df.x)).toBe(true);
+      expect(Number.isFinite(geometry.df.y)).toBe(true);
+      expect(Number.isFinite(geometry.gradient.opacity)).toBe(true);
+      expect(Number.isFinite(geometry.gradient.size)).toBe(true);
+      expect(geometry.gradient.endPointA).toBeDefined();
+      expect(geometry.gradient.endPointB).toBeDefined();
+
+      if (item.left)
+        expect(geometry.point.x).toBeGreaterThanOrEqual(1);
+      else
+        expect(geometry.point.x).toBeLessThanOrEqual(base.width - 1);
+    }
+  });
+
   it('initializes a book and exposes page, view, pages and size state', () => {
     const { $ } = fixture;
     const $book = $('#book');
