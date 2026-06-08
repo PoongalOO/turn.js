@@ -106,6 +106,66 @@ describe('turn.js jQuery plugin', () => {
     expect($book.turn('hasPage', 5)).toBe(false);
   });
 
+  it('destroys a book, restores pages and removes turn.js state', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.data('externalValue', 'keep-me');
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    expect($book.find('.turn-page-wrapper').length).toBeGreaterThan(0);
+    expect($book.children('.page').length).toBe(0);
+
+    $book.turn('destroy');
+
+    expect($book.data('externalValue')).toBe('keep-me');
+    expect($book.data('opts')).toBeUndefined();
+    expect($book.data('pages')).toBeUndefined();
+    expect($book.find('.turn-page-wrapper').length).toBe(0);
+    expect($book.find('.turn-page').length).toBe(0);
+    expect($book.children('.page').length).toBe(4);
+    expect($book.children().map((_, el) => $(el).text()).get()).toEqual([
+      'Page 1',
+      'Page 2',
+      'Page 3',
+      'Page 4'
+    ]);
+    expect($book.attr('style')).toBeUndefined();
+  });
+
+  it('can initialize again after destroy', () => {
+    const { $ } = fixture;
+    const $book = $('#book');
+
+    $book.turn({
+      width: 600,
+      height: 400,
+      display: 'double',
+      gradients: false,
+      acceleration: false
+    });
+
+    $book.turn('destroy');
+    $book.turn({
+      width: 320,
+      height: 240,
+      display: 'single',
+      gradients: false,
+      acceleration: false
+    });
+
+    expect($book.turn('size')).toEqual({ width: 320, height: 240 });
+    expect($book.turn('display')).toBe('single');
+    expect($book.turn('pages')).toBe(4);
+    expect($book.find('.turn-page-wrapper').length).toBeGreaterThan(0);
+  });
+
   it('registers internal handlers with event namespaces', () => {
     fixture.window.close();
     fixture = createFixture();
