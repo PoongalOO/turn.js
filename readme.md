@@ -31,6 +31,7 @@ Compatibility is not yet guaranteed for every modern browser or device. Safari/W
   - gradients now use standard `linear-gradient(...deg, ...)`;
   - fold gradients keep normalized `0-100%` stops and use softer shadow-only colors;
   - transforms now write standard `transform` and `transform-origin` properties, with a prefixed fallback when detected.
+- Moved static wrapper styles to `turn.css` and internal classes, while keeping dynamic size, position, z-index, transform, and gradient values inline.
 - Added a minimal browser demo using jQuery `4.0.0`.
 - Added text and local images to the minimal demo.
 - Fixed minimal demo layout so turn.js page measurements match the real rendered page size.
@@ -50,6 +51,7 @@ xdg-open demos/minimal/index.html
 The demo loads:
 
 - jQuery `4.0.0` from the jQuery CDN;
+- `../../turn.css`;
 - `../../turn.js`;
 - local image assets from `demos/minimal/assets`.
 
@@ -99,6 +101,7 @@ Basic CSS:
 Basic JavaScript:
 
 ```html
+<link rel="stylesheet" href="turn.css">
 <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
 <script src="turn.js"></script>
 <script>
@@ -110,6 +113,8 @@ Basic JavaScript:
   });
 </script>
 ```
+
+`turn.css` contains the static styles for turn.js internal wrappers. `turn.js` also injects these base rules as a fallback for existing pages that only load the script, but loading the stylesheet explicitly is recommended.
 
 Destroying an instance:
 

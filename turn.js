@@ -131,14 +131,30 @@ var has3d,
 	pagePosition = {0: {top: 0, left: 0, right: 'auto', bottom: 'auto'},
 					1: {top: 0, right: 0, left: 'auto', bottom: 'auto'}},
 
+	baseStyleId = 'turn-js-base-css',
+
+	baseStyles = [
+		'.turn-page{position:absolute;}',
+		'.turn-page-wrapper,.turn-flip-wrapper,.turn-fold-wrapper,.turn-shadow{position:absolute;overflow:hidden;}',
+		'.turn-fold-parent{position:absolute;overflow:visible;pointer-events:none;}',
+		'.turn-fold-inner{position:absolute;overflow:visible;}',
+		'.turn-fold-page{cursor:default;}',
+		'.turn-back-shadow{overflow:hidden;}'
+	].join(''),
+
+	ensureTurnCss = function() {
+		if (!document.getElementById(baseStyleId))
+			$('<style/>', {id: baseStyleId, type: 'text/css'}).
+				text(baseStyles).
+					appendTo(document.head || document.documentElement);
+	},
+
 	// Gets basic attributes for a layer
 
-	divAtt = function(top, left, zIndex, overf) {
+	divAtt = function(top, left, zIndex) {
 		return {'css': {
-					position: 'absolute',
 					top: top,
 					left: left,
-					'overflow': overf || 'hidden',
 					'z-index': zIndex || 'auto'
 					}
 			};
@@ -383,6 +399,8 @@ turnMethods = {
 
 	init: function(opts) {
 
+		ensureTurnCss();
+
 		// Define constants
 		if (has3d===undefined) {
 			has3d = 'WebKitCSSMatrix' in window || 'MozPerspective' in document.body.style;
@@ -562,9 +580,7 @@ turnMethods = {
 
 		data.pageWrap[page] = $('<div/>', {'class': 'turn-page-wrapper',
 										page: page,
-										css: {position: 'absolute',
-										overflow: 'hidden',
-										width: width,
+										css: {width: width,
 										height: height}}).
 										css(pagePosition[(data.display=='double') ? page%2 : 0]);
 
@@ -1488,6 +1504,8 @@ flipMethods = {
 
 	init: function(opts) {
 
+		ensureTurnCss();
+
 		if (opts.gradients) {
 			opts.frontGradient = true;
 			opts.backGradient = true;
@@ -1610,8 +1628,8 @@ flipMethods = {
 
 
 		if (gradient && !data.bshadow)
-			data.bshadow = $('<div/>', divAtt(0, 0, 1)).
-				css({'position': '', width: this.width(), height: this.height()}).
+			data.bshadow = $('<div/>', {'class': 'turn-back-shadow'}).
+				css({width: this.width(), height: this.height()}).
 					appendTo(data.parent);
 
 		return gradient;
@@ -1623,17 +1641,17 @@ flipMethods = {
 	_createFoldParent: function() {
 
 		var data = flipData(this),
-			fparent = $('<div/>', {css: {'pointer-events': 'none'}}).hide();
+			fparent = $('<div/>', {'class': 'turn-fold-parent'}).hide();
 
 		fparent.data().flips = 0;
 
 		if (data.opts.turn) {
-			fparent.css(divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto', 'visible').css).
+			fparent.css(divAtt(-data.opts.turn.offset().top, -data.opts.turn.offset().left, 'auto').css).
 					appendTo(data.opts.turn);
 
 			turnData(data.opts.turn).fparent = fparent;
 		} else {
-			fparent.css(divAtt(0, 0, 'auto', 'visible').css).
+			fparent.css(divAtt(0, 0, 'auto').css).
 				attr('id', 'turn-fwrappers').
 					appendTo($('body'));
 		}
@@ -1697,22 +1715,26 @@ flipMethods = {
 			if (!data.fparent)
 				data.fparent = flipMethods._createFoldParent.call(this);
 
-			this.css({position: 'absolute', top: 0, left: 0, bottom: 'auto', right: 'auto'});
+			this.css({top: 0, left: 0, bottom: 'auto', right: 'auto'});
 
-			data.wrapper = $('<div/>', divAtt(0, 0, this.css('z-index'))).
+			data.wrapper = $('<div/>', {'class': 'turn-flip-wrapper'}).
+								css(divAtt(0, 0, this.css('z-index')).css).
 								appendTo(parent).
 									prepend(this);
 
-			data.fwrapper = $('<div/>', divAtt(parent.offset().top, parent.offset().left)).
+			data.fwrapper = $('<div/>', {'class': 'turn-fold-wrapper'}).
+								css(divAtt(parent.offset().top, parent.offset().left).css).
 								hide().
 									appendTo(data.fparent);
 
-			data.fpage = $('<div/>', {css: {cursor: 'default'}}).
-					appendTo($('<div/>', divAtt(0, 0, 0, 'visible')).
+			data.fpage = $('<div/>', {'class': 'turn-fold-page'}).
+					appendTo($('<div/>', {'class': 'turn-fold-inner'}).
+								css(divAtt(0, 0, 0).css).
 								appendTo(data.fwrapper));
 
 			if (data.opts.frontGradient)
-				data.ashadow = $('<div/>', divAtt(0, 0,  1)).
+				data.ashadow = $('<div/>', {'class': 'turn-shadow'}).
+					css(divAtt(0, 0,  1).css).
 					appendTo(data.fpage);
 
 			// Save data
